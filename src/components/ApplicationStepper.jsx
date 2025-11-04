@@ -21,7 +21,7 @@ const steps = [
 
 export default function ApplicationStepper({ activeStep = 0 }) {
   return (
-    <Box sx={{ width: '100%', px: 2 }}>
+    <Box sx={{ width: '100%' }}>
       <Stepper 
         activeStep={activeStep} 
         alternativeLabel

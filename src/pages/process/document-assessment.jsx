@@ -1,5 +1,5 @@
 // material-ui
-import { Grid, Typography, Box, Divider, Button, Chip, Paper } from '@mui/material';
+import { Grid, Typography, Box, Divider, Button, Chip } from '@mui/material';
 import { ArrowLeftOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -18,9 +18,9 @@ export default function DocumentAssessment() {
   };
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+    <>
+      <Box sx={{ mx: { xs: -2, sm: -5 }, mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: { xs: 2, sm: 3 }, py: 2, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
           <Box>
             <Button
               startIcon={<ArrowLeftOutlined />}
@@ -29,16 +29,15 @@ export default function DocumentAssessment() {
               Back to Applications
             </Button>
           </Box>
-          <Box sx={{ flexGrow: 1 }}>
-            <Paper elevation={1} sx={{ p: 3 }}>
-              <ApplicationStepper activeStep={0} />
-            </Paper>
-          </Box>
         </Box>
-      </Grid>
+        <Box sx={{ px: { xs: 2, sm: 3 }, py: 2, bgcolor: 'background.paper' }}>
+          <ApplicationStepper activeStep={0} />
+        </Box>
+      </Box>
 
-      <Grid item xs={12}>
-        <MainCard>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <MainCard>
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
               <Typography variant="h4">Document Assessment</Typography>
@@ -186,6 +185,7 @@ export default function DocumentAssessment() {
         </MainCard>
       </Grid>
     </Grid>
+    </>
   );
 }
 
