@@ -15,6 +15,15 @@ const Shadow = Loadable(lazy(() => import('pages/component-overview/shadows')));
 // render - sample page
 const SamplePage = Loadable(lazy(() => import('pages/extra-pages/sample-page')));
 
+// render - ops settings
+const OpsSettings = Loadable(lazy(() => import('pages/ops-settings')));
+
+// render - process pages
+const Application = Loadable(lazy(() => import('pages/process/application')));
+const DocumentAssessment = Loadable(lazy(() => import('pages/process/document-assessment')));
+const CandidateScreening = Loadable(lazy(() => import('pages/process/candidate-screening')));
+const Approval = Loadable(lazy(() => import('pages/process/approval')));
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -49,6 +58,31 @@ const MainRoutes = {
     {
       path: 'sample-page',
       element: <SamplePage />
+    },
+    {
+      path: 'ops-settings',
+      element: <OpsSettings />
+    },
+    {
+      path: 'process',
+      children: [
+        {
+          path: 'application',
+          element: <Application />
+        },
+        {
+          path: 'document-assessment/:candidateId',
+          element: <DocumentAssessment />
+        },
+        {
+          path: 'candidate-screening/:candidateId',
+          element: <CandidateScreening />
+        },
+        {
+          path: 'approval/:candidateId',
+          element: <Approval />
+        }
+      ]
     }
   ]
 };
