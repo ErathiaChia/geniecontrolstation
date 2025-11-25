@@ -22,11 +22,7 @@ import IconButton from 'components/@extended/IconButton';
 import Transitions from 'components/@extended/Transitions';
 
 // assets
-import BellOutlined from '@ant-design/icons/BellOutlined';
-import CheckCircleOutlined from '@ant-design/icons/CheckCircleOutlined';
-import GiftOutlined from '@ant-design/icons/GiftOutlined';
-import MessageOutlined from '@ant-design/icons/MessageOutlined';
-import SettingOutlined from '@ant-design/icons/SettingOutlined';
+import { Notifications, CheckCircle, Assignment, PersonSearch, PendingActions, Description } from '@mui/icons-material';
 
 // sx styles
 const avatarSX = {
@@ -51,7 +47,7 @@ export default function Notification() {
   const downMD = useMediaQuery((theme) => theme.breakpoints.down('md'));
 
   const anchorRef = useRef(null);
-  const [read, setRead] = useState(2);
+  const [read, setRead] = useState(3);
   const [open, setOpen] = useState(false);
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
@@ -80,7 +76,7 @@ export default function Notification() {
         onClick={handleToggle}
       >
         <Badge badgeContent={read} color="primary">
-          <BellOutlined />
+          <Notifications />
         </Badge>
       </IconButton>
       <Popper
@@ -106,7 +102,7 @@ export default function Notification() {
                       {read > 0 && (
                         <Tooltip title="Mark as all read">
                           <IconButton color="success" size="small" onClick={() => setRead(0)}>
-                            <CheckCircleOutlined style={{ fontSize: '1.15rem' }} />
+                            <CheckCircle style={{ fontSize: '1.15rem' }} />
                           </IconButton>
                         </Tooltip>
                       )}
@@ -132,79 +128,80 @@ export default function Notification() {
                       selected={read > 0}
                       secondaryAction={
                         <Typography variant="caption" noWrap>
-                          3:00 AM
-                        </Typography>
-                      }
-                    >
-                      <ListItemAvatar>
-                        <Avatar sx={{ color: 'success.main', bgcolor: 'success.lighter' }}>
-                          <GiftOutlined />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Typography variant="h6">
-                            It&apos;s{' '}
-                            <Typography component="span" variant="subtitle1">
-                              Cristina danny&apos;s
-                            </Typography>{' '}
-                            birthday today.
-                          </Typography>
-                        }
-                        secondary="2 min ago"
-                      />
-                    </ListItem>
-                    <ListItem
-                      component={ListItemButton}
-                      divider
-                      secondaryAction={
-                        <Typography variant="caption" noWrap>
-                          6:00 AM
+                          8:30 AM
                         </Typography>
                       }
                     >
                       <ListItemAvatar>
                         <Avatar sx={{ color: 'primary.main', bgcolor: 'primary.lighter' }}>
-                          <MessageOutlined />
+                          <Description />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={
+                          <Typography variant="h6">
+                            New application{' '}
+                            <Typography component="span" variant="subtitle1">
+                              APP-2024-009
+                            </Typography>{' '}
+                            submitted
+                          </Typography>
+                        }
+                        secondary="15 min ago"
+                      />
+                    </ListItem>
+                    <ListItem
+                      component={ListItemButton}
+                      divider
+                      selected={read > 1}
+                      secondaryAction={
+                        <Typography variant="caption" noWrap>
+                          9:15 AM
+                        </Typography>
+                      }
+                    >
+                      <ListItemAvatar>
+                        <Avatar sx={{ color: 'warning.main', bgcolor: 'warning.lighter' }}>
+                          <Assignment />
                         </Avatar>
                       </ListItemAvatar>
                       <ListItemText
                         primary={
                           <Typography variant="h6">
                             <Typography component="span" variant="subtitle1">
-                              Aida Burg
+                              3 documents
                             </Typography>{' '}
-                            commented your post.
+                            pending assessment
                           </Typography>
                         }
-                        secondary="5 August"
+                        secondary="Today"
                       />
                     </ListItem>
                     <ListItem
                       component={ListItemButton}
                       divider
-                      selected={read > 0}
+                      selected={read > 2}
                       secondaryAction={
                         <Typography variant="caption" noWrap>
-                          2:45 PM
+                          Yesterday
                         </Typography>
                       }
                     >
                       <ListItemAvatar>
-                        <Avatar sx={{ color: 'error.main', bgcolor: 'error.lighter' }}>
-                          <SettingOutlined />
+                        <Avatar sx={{ color: 'info.main', bgcolor: 'info.lighter' }}>
+                          <PersonSearch />
                         </Avatar>
                       </ListItemAvatar>
                       <ListItemText
                         primary={
                           <Typography variant="h6">
-                            Your Profile is Complete &nbsp;
                             <Typography component="span" variant="subtitle1">
-                              60%
+                              Michael Chen
                             </Typography>{' '}
+                            ready for screening
                           </Typography>
                         }
-                        secondary="7 hours ago"
+                        secondary="Application APP-2024-003"
                       />
                     </ListItem>
                     <ListItem
@@ -212,26 +209,25 @@ export default function Notification() {
                       divider
                       secondaryAction={
                         <Typography variant="caption" noWrap>
-                          9:10 PM
+                          2 days ago
                         </Typography>
                       }
                     >
                       <ListItemAvatar>
-                        <Avatar sx={{ color: 'primary.main', bgcolor: 'primary.lighter' }}>C</Avatar>
+                        <Avatar sx={{ color: 'success.main', bgcolor: 'success.lighter' }}>
+                          <PendingActions />
+                        </Avatar>
                       </ListItemAvatar>
                       <ListItemText
                         primary={
                           <Typography variant="h6">
                             <Typography component="span" variant="subtitle1">
-                              Cristina Danny
+                              2 applications
                             </Typography>{' '}
-                            invited to join{' '}
-                            <Typography component="span" variant="subtitle1">
-                              Meeting.
-                            </Typography>
+                            pending approval
                           </Typography>
                         }
-                        secondary="Daily scrum meeting time"
+                        secondary="Review required by Nov 8"
                       />
                     </ListItem>
                     <ListItemButton sx={{ textAlign: 'center', py: `${12}px !important` }}>

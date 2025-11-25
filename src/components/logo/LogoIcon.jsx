@@ -1,39 +1,25 @@
 // material-ui
 import { useTheme } from '@mui/material/styles';
 
-// ==============================|| LOGO ICON SVG ||============================== //
+// ==============================|| GENIE LOGO ICON SVG ||============================== //
 
 export default function LogoIcon() {
   const theme = useTheme();
 
   return (
-    <svg width="129" height="129" viewBox="0 0 129 129" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M7.27577 57.2242L17.5616 46.9384L17.5724 46.9276H36.9234L29.2238 54.6273L27.2358 56.6152L19.3511 64.5L20.3276 65.4792L64.5 109.649L109.649 64.5L101.761 56.6152L101.206 56.0572L92.0766 46.9276H111.428L111.438 46.9384L119.5 55.0002L129 64.5L64.5 129L0 64.5L7.27577 57.2242ZM64.5 0L101.77 37.2695H82.4185L64.5 19.3511L46.5816 37.2695H27.2305L64.5 0Z"
-        fill={theme.vars.palette.primary.dark}
-      />
-      <path
-        d="M19.3509 64.5L27.2357 56.6152L29.2236 54.6273L21.5267 46.9276H17.5722L17.5615 46.9384L7.27561 57.2242L17.1483 67.0487L19.3509 64.5Z"
-        fill="url(#paint0_linear)"
-      />
-      <path
-        d="M101.762 56.6152L109.649 64.5L108.868 65.2807L108.871 65.2834L119.5 55.0002L111.438 46.9384L111.428 46.9276H110.644L101.206 56.0572L101.762 56.6152Z"
-        fill="url(#paint1_linear)"
-      />
-      <path
-        d="M17.5508 46.9276L17.5615 46.9384L27.2357 56.6152L64.4999 93.8767L111.449 46.9276H17.5508Z"
+    <svg width="100%" height="100%" viewBox="0 0 96 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path 
+        fillRule="evenodd" 
+        clipRule="evenodd" 
+        d="M24.3489 12.4188H50.0001V20.4188H24.3489C23.5911 20.4188 22.9768 21.0331 22.9768 21.7909V34.9769C22.9768 35.7347 23.5911 36.349 24.3489 36.349H26.7635V44.349H24.3489C19.1728 44.349 14.9768 40.153 14.9768 34.9769V21.7909C14.9768 16.6148 19.1728 12.4188 24.3489 12.4188ZM31.966 49.8602V50.4111C31.966 55.5871 36.1621 59.7832 41.3381 59.7832H62.3877V51.7832H41.3381C40.5803 51.7832 39.966 51.1689 39.966 50.4111V49.8602H31.966ZM45.8763 44.349H48.0001H71.6512C76.8273 44.349 81.0233 40.153 81.0233 34.9769V21.7909C81.0233 16.6148 76.8273 12.4188 71.6512 12.4188H61.0001V20.4188H71.6512C72.409 20.4188 73.0233 21.0331 73.0233 21.7909V34.9769C73.0233 35.7347 72.409 36.349 71.6512 36.349H48.0001H45.8763V44.349Z" 
         fill={theme.vars.palette.primary.main}
       />
-      <defs>
-        <linearGradient id="paint0_linear" x1="25.0225" y1="49.3259" x2="11.4189" y2="62.9295" gradientUnits="userSpaceOnUse">
-          <stop stopColor={theme.vars.palette.primary.darker} />
-          <stop offset="0.9637" stopColor={theme.vars.palette.primary.dark} stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="paint1_linear" x1="103.5" y1="49.5" x2="114.5" y2="62" gradientUnits="userSpaceOnUse">
-          <stop stopColor={theme.vars.palette.primary.darker} />
-          <stop offset="1" stopColor={theme.vars.palette.primary.dark} stopOpacity="0" />
-        </linearGradient>
-      </defs>
+      <circle cx="67.8864" cy="55.6134" r="3.66279" fill={theme.vars.palette.primary.main} />
+      <circle cx="55.5" cy="16.5" r="3.5" fill={theme.vars.palette.primary.main} />
+      <path 
+        d="M35.654 31.7428C37.0875 35.6168 40.1419 38.6712 44.0159 40.1047C40.1419 41.5382 37.0875 44.5926 35.654 48.4665C34.2205 44.5926 31.1661 41.5382 27.2921 40.1047C31.1661 38.6712 34.2205 35.6168 35.654 31.7428Z" 
+        fill={theme.vars.palette.primary.main}
+      />
     </svg>
   );
 }

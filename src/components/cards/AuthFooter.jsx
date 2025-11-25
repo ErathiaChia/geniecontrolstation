@@ -15,8 +15,8 @@ export default function AuthFooter() {
       >
         <Typography variant="subtitle2" color="secondary">
           © Made with love by Team{' '}
-          <Link href="https://codedthemes.com/" target="_blank" underline="hover">
-            CodedThemes
+          <Link href="https://ST Engineering.com/" target="_blank" underline="hover">
+            ST Engineering
           </Link>
         </Typography>
 

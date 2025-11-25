@@ -24,8 +24,7 @@ import IconButton from 'components/@extended/IconButton';
 import AnimateButton from 'components/@extended/AnimateButton';
 
 // assets
-import EyeOutlined from '@ant-design/icons/EyeOutlined';
-import EyeInvisibleOutlined from '@ant-design/icons/EyeInvisibleOutlined';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 // ============================|| JWT - LOGIN ||============================ //
 
@@ -45,7 +44,7 @@ export default function AuthLogin({ isDemo = false }) {
     <>
       <Formik
         initialValues={{
-          email: 'info@codedthemes.com',
+          email: 'info@ST Engineering.com',
           password: '123456',
           submit: null
         }}
@@ -102,7 +101,7 @@ export default function AuthLogin({ isDemo = false }) {
                           edge="end"
                           color="secondary"
                         >
-                          {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                          {showPassword ? <Visibility /> : <VisibilityOff />}
                         </IconButton>
                       </InputAdornment>
                     }

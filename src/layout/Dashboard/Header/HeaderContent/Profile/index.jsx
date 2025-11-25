@@ -25,9 +25,7 @@ import Transitions from 'components/@extended/Transitions';
 import IconButton from 'components/@extended/IconButton';
 
 // assets
-import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
-import SettingOutlined from '@ant-design/icons/SettingOutlined';
-import UserOutlined from '@ant-design/icons/UserOutlined';
+import { Logout, Settings, Person } from '@mui/icons-material';
 import avatar1 from 'assets/images/users/avatar-1.png';
 
 // tab panel wrapper
@@ -127,7 +125,7 @@ export default function Profile() {
                       <Grid>
                         <Tooltip title="Logout">
                           <IconButton size="large" sx={{ color: 'text.primary' }}>
-                            <LogoutOutlined />
+                            <Logout />
                           </IconButton>
                         </Tooltip>
                       </Grid>
@@ -148,7 +146,7 @@ export default function Profile() {
                             marginBottom: 0
                           }
                         }}
-                        icon={<UserOutlined />}
+                        icon={<Person />}
                         label="Profile"
                         {...a11yProps(0)}
                       />
@@ -164,7 +162,7 @@ export default function Profile() {
                             marginBottom: 0
                           }
                         }}
-                        icon={<SettingOutlined />}
+                        icon={<Settings />}
                         label="Setting"
                         {...a11yProps(1)}
                       />

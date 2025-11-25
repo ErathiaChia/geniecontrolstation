@@ -3,9 +3,9 @@
   "version": "4.0.0",
   "homepage": "https://mantisdashboard.com/free",
   "author": {
-    "name": "CodedThemes",
-    "email": "codedthemes@gmail.com",
-    "url": "https://codedthemes.com/"
+    "name": "ST Engineering",
+    "email": "ST Engineering@gmail.com",
+    "url": "https://ST Engineering.com/"
   },
   "scripts": {
     "start": "vite",
@@ -23,6 +23,7 @@
     "@emotion/styled": "11.14.1",
     "@fontsource/public-sans": "5.2.7",
     "@mui/base": "5.0.0-beta.70",
+    "@mui/icons-material": "^7.3.4",
     "@mui/lab": "7.0.1-beta.18",
     "@mui/material": "7.3.4",
     "@mui/system": "7.3.3",

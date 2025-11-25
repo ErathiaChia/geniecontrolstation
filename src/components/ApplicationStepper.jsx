@@ -1,21 +1,21 @@
 // material-ui
 import { Stepper, Step, StepLabel, Box } from '@mui/material';
-import { FileTextOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Description, Search, CheckCircle } from '@mui/icons-material';
 
 // ==============================|| APPLICATION PROCESS STEPPER ||============================== //
 
 const steps = [
   {
     label: 'Document Assessment',
-    icon: <FileTextOutlined style={{ fontSize: '20px' }} />
+    icon: <Description style={{ fontSize: '20px' }} />
   },
   {
     label: 'Candidate Screening',
-    icon: <SearchOutlined style={{ fontSize: '20px' }} />
+    icon: <Search style={{ fontSize: '20px' }} />
   },
   {
     label: 'Final Approval',
-    icon: <CheckCircleOutlined style={{ fontSize: '20px' }} />
+    icon: <CheckCircle style={{ fontSize: '20px' }} />
   }
 ];
 

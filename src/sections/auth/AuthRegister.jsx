@@ -25,8 +25,7 @@ import AnimateButton from 'components/@extended/AnimateButton';
 import { strengthColor, strengthIndicator } from 'utils/password-strength';
 
 // assets
-import EyeOutlined from '@ant-design/icons/EyeOutlined';
-import EyeInvisibleOutlined from '@ant-design/icons/EyeInvisibleOutlined';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 // ============================|| JWT - REGISTER ||============================ //
 
@@ -181,7 +180,7 @@ export default function AuthRegister() {
                           edge="end"
                           color="secondary"
                         >
-                          {showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                          {showPassword ? <Visibility /> : <VisibilityOff />}
                         </IconButton>
                       </InputAdornment>
                     }

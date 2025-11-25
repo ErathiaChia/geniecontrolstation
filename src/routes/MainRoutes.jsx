@@ -22,7 +22,7 @@ const OpsSettings = Loadable(lazy(() => import('pages/ops-settings')));
 const Application = Loadable(lazy(() => import('pages/process/application')));
 const DocumentAssessment = Loadable(lazy(() => import('pages/process/document-assessment')));
 const CandidateScreening = Loadable(lazy(() => import('pages/process/candidate-screening')));
-const Approval = Loadable(lazy(() => import('pages/process/approval')));
+const Approval = Loadable(lazy(() => import('pages/process/pending-approval')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 

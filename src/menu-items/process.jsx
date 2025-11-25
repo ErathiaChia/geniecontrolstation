@@ -1,9 +1,9 @@
 // assets
-import { FileTextOutlined } from '@ant-design/icons';
+import { Description } from '@mui/icons-material';
 
 // icons
 const icons = {
-  FileTextOutlined
+  Description
 };
 
 // ==============================|| MENU ITEMS - PROCESS ||============================== //
@@ -18,7 +18,7 @@ const process = {
       title: 'Application',
       type: 'item',
       url: '/process/application',
-      icon: icons.FileTextOutlined
+      icon: icons.Description
     }
   ]
 };

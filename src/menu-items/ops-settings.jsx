@@ -1,9 +1,9 @@
 // assets
-import { SettingOutlined } from '@ant-design/icons';
+import { Settings } from '@mui/icons-material';
 
 // icons
 const icons = {
-  SettingOutlined
+  Settings
 };
 
 // ==============================|| MENU ITEMS - OPS SETTINGS ||============================== //
@@ -18,7 +18,7 @@ const opsSettings = {
       title: 'Ops Settings',
       type: 'item',
       url: '/ops-settings',
-      icon: icons.SettingOutlined
+      icon: icons.Settings
     }
   ]
 };

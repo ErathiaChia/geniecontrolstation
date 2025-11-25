@@ -4,9 +4,7 @@ import PropTypes from 'prop-types';
 import getColors from 'utils/getColors';
 
 // assets
-import BorderOutlined from '@ant-design/icons/BorderOutlined';
-import CheckSquareFilled from '@ant-design/icons/CheckSquareFilled';
-import MinusSquareFilled from '@ant-design/icons/MinusSquareFilled';
+import { CheckBoxOutlineBlank, CheckBox, IndeterminateCheckBox } from '@mui/icons-material';
 
 // ==============================|| RADIO - COLORS ||============================== //
 
@@ -61,9 +59,9 @@ export default function Checkbox(theme) {
     MuiCheckbox: {
       defaultProps: {
         className: 'size-small',
-        icon: <BorderOutlined className="icon" />,
-        checkedIcon: <CheckSquareFilled className="icon" />,
-        indeterminateIcon: <MinusSquareFilled className="icon" />
+        icon: <CheckBoxOutlineBlank className="icon" />,
+        checkedIcon: <CheckBox className="icon" />,
+        indeterminateIcon: <IndeterminateCheckBox className="icon" />
       },
       styleOverrides: {
         root: {

@@ -15,7 +15,7 @@ import IconButton from 'components/@extended/IconButton';
 import Transitions from 'components/@extended/Transitions';
 
 // assets
-import MoreOutlined from '@ant-design/icons/MoreOutlined';
+import { MoreVert } from '@mui/icons-material';
 
 // ==============================|| HEADER CONTENT - MOBILE ||============================== //
 
@@ -60,7 +60,7 @@ export default function MobileSection() {
           color="secondary"
           variant="light"
         >
-          <MoreOutlined />
+          <MoreVert />
         </IconButton>
       </Box>
       <Popper

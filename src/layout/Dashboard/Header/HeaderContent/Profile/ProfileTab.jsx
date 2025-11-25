@@ -6,9 +6,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 
 // assets
-import EditOutlined from '@ant-design/icons/EditOutlined';
-import LogoutOutlined from '@ant-design/icons/LogoutOutlined';
-import UserOutlined from '@ant-design/icons/UserOutlined';
+import { Edit, Logout, Person } from '@mui/icons-material';
 
 // ==============================|| HEADER PROFILE - PROFILE TAB ||============================== //
 
@@ -17,19 +15,19 @@ export default function ProfileTab() {
     <List component="nav" sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
       <ListItemButton>
         <ListItemIcon>
-          <EditOutlined />
+          <Edit />
         </ListItemIcon>
         <ListItemText primary="Edit Profile" />
       </ListItemButton>
       <ListItemButton>
         <ListItemIcon>
-          <UserOutlined />
+          <Person />
         </ListItemIcon>
         <ListItemText primary="View Profile" />
       </ListItemButton>
       <ListItemButton>
         <ListItemIcon>
-          <LogoutOutlined />
+          <Logout />
         </ListItemIcon>
         <ListItemText primary="Logout" />
       </ListItemButton>

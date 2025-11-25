@@ -1,21 +1,21 @@
 // assets
 import {
-  AppstoreAddOutlined,
-  AntDesignOutlined,
-  BarcodeOutlined,
-  BgColorsOutlined,
-  FontSizeOutlined,
-  LoadingOutlined
-} from '@ant-design/icons';
+  Apps,
+  Dashboard,
+  QrCode2,
+  Palette,
+  TextFields,
+  HourglassEmpty
+} from '@mui/icons-material';
 
 // icons
 const icons = {
-  FontSizeOutlined,
-  BgColorsOutlined,
-  BarcodeOutlined,
-  AntDesignOutlined,
-  LoadingOutlined,
-  AppstoreAddOutlined
+  TextFields,
+  Palette,
+  QrCode2,
+  Dashboard,
+  HourglassEmpty,
+  Apps
 };
 
 // ==============================|| MENU ITEMS - UTILITIES ||============================== //
@@ -30,21 +30,21 @@ const utilities = {
       title: 'Typography',
       type: 'item',
       url: '/typography',
-      icon: icons.FontSizeOutlined
+      icon: icons.TextFields
     },
     {
       id: 'util-color',
       title: 'Color',
       type: 'item',
       url: '/color',
-      icon: icons.BgColorsOutlined
+      icon: icons.Palette
     },
     {
       id: 'util-shadow',
       title: 'Shadow',
       type: 'item',
       url: '/shadow',
-      icon: icons.BarcodeOutlined
+      icon: icons.QrCode2
     }
   ]
 };

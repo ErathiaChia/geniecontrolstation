@@ -14,9 +14,7 @@ import MainCard from 'components/MainCard';
 import navigation from 'menu-items';
 
 // assets
-import ApartmentOutlined from '@ant-design/icons/ApartmentOutlined';
-import HomeOutlined from '@ant-design/icons/HomeOutlined';
-import HomeFilled from '@ant-design/icons/HomeFilled';
+import { Apartment, HomeOutlined, Home } from '@mui/icons-material';
 
 export default function Breadcrumbs({
   card = false,
@@ -103,7 +101,7 @@ export default function Breadcrumbs({
 
   // collapse item
   if (main && main.type === 'collapse' && !main.breadcrumbs) {
-    CollapseIcon = main.icon ? main.icon : ApartmentOutlined;
+    CollapseIcon = main.icon ? main.icon : Apartment;
     mainContent = (
       <Typography
         {...(main.url && { component: Link, to: main.url })}
@@ -135,7 +133,7 @@ export default function Breadcrumbs({
               <MuiBreadcrumbs aria-label="breadcrumb" maxItems={maxItems || 8} separator={separatorIcon}>
                 <Typography component={Link} to="/" color="text.secondary" variant="h6" sx={{ textDecoration: 'none' }}>
                   {icons && <HomeOutlined style={iconSX} />}
-                  {icon && !icons && <HomeFilled style={{ ...iconSX, marginRight: 0 }} />}
+                  {icon && !icons && <Home style={{ ...iconSX, marginRight: 0 }} />}
                   {(!icon || icons) && 'Home'}
                 </Typography>
                 {mainContent}
@@ -157,7 +155,7 @@ export default function Breadcrumbs({
   if ((item && item.type === 'item') || (item?.type === 'group' && item?.url) || custom) {
     itemTitle = item?.title;
 
-    ItemIcon = item?.icon ? item.icon : ApartmentOutlined;
+    ItemIcon = item?.icon ? item.icon : Apartment;
     itemContent = (
       <Typography variant="subtitle1" color="text.primary">
         {icons && <ItemIcon style={iconSX} />}
@@ -169,7 +167,7 @@ export default function Breadcrumbs({
       <MuiBreadcrumbs aria-label="breadcrumb" maxItems={maxItems || 8} separator={separatorIcon}>
         <Typography component={Link} to="/" color="text.secondary" variant="h6" sx={{ textDecoration: 'none' }}>
           {icons && <HomeOutlined style={iconSX} />}
-          {icon && !icons && <HomeFilled style={{ ...iconSX, marginRight: 0 }} />}
+          {icon && !icons && <Home style={{ ...iconSX, marginRight: 0 }} />}
           {(!icon || icons) && 'Home'}
         </Typography>
         {mainContent}
@@ -181,7 +179,7 @@ export default function Breadcrumbs({
       tempContent = (
         <MuiBreadcrumbs aria-label="breadcrumb" maxItems={maxItems || 8} separator={separatorIcon}>
           {links?.map((link, index) => {
-            CollapseIcon = link.icon ? link.icon : ApartmentOutlined;
+            CollapseIcon = link.icon ? link.icon : Apartment;
 
             return (
               <Typography

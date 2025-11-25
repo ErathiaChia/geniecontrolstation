@@ -14,8 +14,7 @@ import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { DRAWER_WIDTH, MINI_DRAWER_WIDTH } from 'config';
 
 // assets
-import MenuFoldOutlined from '@ant-design/icons/MenuFoldOutlined';
-import MenuUnfoldOutlined from '@ant-design/icons/MenuUnfoldOutlined';
+import { MenuOpen, Menu } from '@mui/icons-material';
 
 // ==============================|| MAIN LAYOUT - HEADER ||============================== //
 
@@ -43,7 +42,7 @@ export default function Header() {
           ml: { xs: 0, lg: -2 }
         })}
       >
-        {!drawerOpen ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+        {!drawerOpen ? <Menu /> : <MenuOpen />}
       </IconButton>
       {headerContent}
     </Toolbar>

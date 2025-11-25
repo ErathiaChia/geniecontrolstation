@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Toolbar from '@mui/material/Toolbar';
@@ -19,14 +19,48 @@ import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 export default function DashboardLayout() {
   const { menuMasterLoading } = useGetMenuMaster();
   const downXL = useMediaQuery((theme) => theme.breakpoints.down('xl'));
+  const location = useLocation();
 
   // set media wise responsive drawer
   useEffect(() => {
     handlerDrawerOpen(!downXL);
   }, [downXL]);
 
+  // Routes that should hide navigation (stepper flow pages)
+  const hideNavigationRoutes = [
+    '/process/document-assessment',
+    '/process/candidate-screening',
+    '/process/approval'
+  ];
+
+  // Check if current route should hide navigation elements
+  const shouldHideNavigation = hideNavigationRoutes.some(route => 
+    location.pathname.startsWith(route)
+  );
+
   if (menuMasterLoading) return <Loader />;
 
+  // Full-screen layout for stepper flow pages
+  if (shouldHideNavigation) {
+    return (
+      <Box sx={{ display: 'flex', width: '100%', minHeight: '100vh' }}>
+        <Box component="main" sx={{ width: '100%', flexGrow: 1 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              minHeight: '100vh',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <Outlet />
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Standard layout with navigation
   return (
     <Box sx={{ display: 'flex', width: '100%' }}>
       <Header />

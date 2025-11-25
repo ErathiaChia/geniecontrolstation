@@ -5,9 +5,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 
 // assets
-import LockOutlined from '@ant-design/icons/LockOutlined';
-import UserOutlined from '@ant-design/icons/UserOutlined';
-import UnorderedListOutlined from '@ant-design/icons/UnorderedListOutlined';
+import { Lock, Person, FormatListBulleted } from '@mui/icons-material';
 
 // ==============================|| HEADER PROFILE - SETTING TAB ||============================== //
 
@@ -16,19 +14,19 @@ export default function SettingTab() {
     <List component="nav" sx={{ p: 0, '& .MuiListItemIcon-root': { minWidth: 32 } }}>
       <ListItemButton>
         <ListItemIcon>
-          <UserOutlined />
+          <Person />
         </ListItemIcon>
         <ListItemText primary="Account Settings" />
       </ListItemButton>
       <ListItemButton>
         <ListItemIcon>
-          <LockOutlined />
+          <Lock />
         </ListItemIcon>
         <ListItemText primary="Privacy Center" />
       </ListItemButton>
       <ListItemButton>
         <ListItemIcon>
-          <UnorderedListOutlined />
+          <FormatListBulleted />
         </ListItemIcon>
         <ListItemText primary="History" />
       </ListItemButton>

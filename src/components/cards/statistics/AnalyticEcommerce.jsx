@@ -10,16 +10,52 @@ import Box from '@mui/material/Box';
 import MainCard from 'components/MainCard';
 
 // assets
-import RiseOutlined from '@ant-design/icons/RiseOutlined';
-import FallOutlined from '@ant-design/icons/FallOutlined';
+import { TrendingUp, TrendingDown } from '@mui/icons-material';
 
 const iconSX = { fontSize: '0.75rem', color: 'inherit', marginLeft: 0, marginRight: 0 };
 
-export default function AnalyticEcommerce({ color = 'primary', title, count, percentage, isLoss, extra }) {
+export default function AnalyticEcommerce({ color = 'primary', title, count, percentage, isLoss, extra, icon: IconComponent }) {
   return (
-    <MainCard contentSX={{ p: 2.25 }}>
-      <Stack sx={{ gap: 0.5 }}>
-        <Typography variant="h6" color="text.secondary">
+    <MainCard 
+      border={false}
+      contentSX={{ p: 2.25 }}
+      sx={{ 
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 120,
+        border: 2, 
+        borderColor: `${color}.main`,
+        '&:hover': {
+          boxShadow: 4
+        }
+      }}
+    >
+      <Stack sx={{ gap: 0.5, height: '100%' }}>
+        <Typography 
+          variant="h6" 
+          color="text.primary" 
+          fontWeight={600}
+          sx={{ 
+            minHeight: 48,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word'
+          }}
+        >
+          {IconComponent && (
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                color: `${color}.main`
+              }}
+            >
+              <IconComponent sx={{ fontSize: '1.5rem' }} />
+            </Box>
+          )}
           {title}
         </Typography>
         <Grid container sx={{ alignItems: 'center' }}>
@@ -33,7 +69,7 @@ export default function AnalyticEcommerce({ color = 'primary', title, count, per
               <Chip
                 variant="combined"
                 color={color}
-                icon={isLoss ? <FallOutlined style={iconSX} /> : <RiseOutlined style={iconSX} />}
+                icon={isLoss ? <TrendingDown style={iconSX} /> : <TrendingUp style={iconSX} />}
                 label={`${percentage}%`}
                 sx={{ ml: 1.25, pl: 1 }}
                 size="small"
@@ -42,15 +78,6 @@ export default function AnalyticEcommerce({ color = 'primary', title, count, per
           )}
         </Grid>
       </Stack>
-      <Box sx={{ pt: 2.25 }}>
-        <Typography variant="caption" color="text.secondary">
-          You made an extra{' '}
-          <Typography variant="caption" sx={{ color: `${color || 'primary'}.main` }}>
-            {extra}
-          </Typography>{' '}
-          this year
-        </Typography>
-      </Box>
     </MainCard>
   );
 }
@@ -61,5 +88,6 @@ AnalyticEcommerce.propTypes = {
   count: PropTypes.string,
   percentage: PropTypes.number,
   isLoss: PropTypes.bool,
-  extra: PropTypes.string
+  extra: PropTypes.string,
+  icon: PropTypes.elementType
 };
