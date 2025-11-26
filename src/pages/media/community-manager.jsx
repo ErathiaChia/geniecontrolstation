@@ -33,6 +33,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import MenuItem from '@mui/material/MenuItem';
+import { DataGrid } from '@mui/x-data-grid';
 
 // icons
 import {
@@ -210,6 +211,30 @@ export default function CommunityManager() {
 
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Add FM Station Modal States
+  const [addStationModalOpen, setAddStationModalOpen] = useState(false);
+  const [addStationFormData, setAddStationFormData] = useState({
+    logo: null,
+    logoPreview: null,
+    stationName: '',
+    apiConfig: '',
+    schedules: []
+  });
+  const [dragActiveLogo, setDragActiveLogo] = useState(false);
+  const logoInputRef = useRef(null);
+
+  // Edit FM Station Modal States
+  const [editStationModalOpen, setEditStationModalOpen] = useState(false);
+  const [editStationFormData, setEditStationFormData] = useState({
+    logo: null,
+    logoPreview: null,
+    stationName: '',
+    apiConfig: '',
+    schedules: []
+  });
+  const [dragActiveEditLogo, setDragActiveEditLogo] = useState(false);
+  const editLogoInputRef = useRef(null);
 
   // Refs
   const audioRef = useRef(null);
@@ -549,6 +574,557 @@ export default function CommunityManager() {
   // Available segment categories
   const segmentCategories = ['Community', 'Traffic', 'Interview', 'Music', 'News', 'Entertainment', 'Sports', 'Weather'];
 
+  // Add FM Station Modal Handlers
+  const handleAddStationClick = () => {
+    setAddStationModalOpen(true);
+  };
+
+  const handleAddStationClose = () => {
+    setAddStationModalOpen(false);
+    setAddStationFormData({
+      logo: null,
+      logoPreview: null,
+      stationName: '',
+      apiConfig: '',
+      schedules: []
+    });
+  };
+
+  const handleAddStationFormChange = (field, value) => {
+    setAddStationFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleLogoDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActiveLogo(true);
+    } else if (e.type === "dragleave") {
+      setDragActiveLogo(false);
+    }
+  };
+
+  const handleLogoDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveLogo(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleLogoFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleLogoChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleLogoFile(e.target.files[0]);
+    }
+  };
+
+  const handleLogoFile = (file) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAddStationFormData(prev => ({
+          ...prev,
+          logo: file,
+          logoPreview: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddScheduleRow = () => {
+    const newSchedule = {
+      id: Date.now(),
+      dayOfWeek: '',
+      startTime: '',
+      endTime: '',
+      programName: ''
+    };
+    setAddStationFormData(prev => ({
+      ...prev,
+      schedules: [...prev.schedules, newSchedule]
+    }));
+  };
+
+  const handleScheduleChange = (id, field, value) => {
+    setAddStationFormData(prev => ({
+      ...prev,
+      schedules: prev.schedules.map(schedule => 
+        schedule.id === id 
+          ? { ...schedule, [field]: value }
+          : schedule
+      )
+    }));
+  };
+
+  const handleDeleteSchedule = (id) => {
+    setAddStationFormData(prev => ({
+      ...prev,
+      schedules: prev.schedules.filter(schedule => schedule.id !== id)
+    }));
+  };
+
+  const handleAddStationConfirm = () => {
+    // Validate form data
+    if (!addStationFormData.stationName) {
+      alert('Please enter a station name');
+      return;
+    }
+    if (!addStationFormData.apiConfig) {
+      alert('Please enter API configuration');
+      return;
+    }
+    if (addStationFormData.schedules.length === 0) {
+      alert('Please add at least one program schedule');
+      return;
+    }
+
+    // Create new station
+    const newStation = {
+      id: stations.length + 1,
+      name: addStationFormData.stationName,
+      active: false,
+      url: addStationFormData.apiConfig,
+      logo: addStationFormData.logoPreview,
+      schedules: addStationFormData.schedules
+    };
+
+    setStations([...stations, newStation]);
+    setStationData(prev => ({
+      ...prev,
+      [newStation.id]: []
+    }));
+
+    console.log('New station added:', newStation);
+    alert('FM Station added successfully!');
+    handleAddStationClose();
+  };
+
+  // Edit FM Station Modal Handlers
+  const handleEditStationClick = () => {
+    if (!activeStation) {
+      alert('Please select a station to edit');
+      return;
+    }
+
+    // Populate form with current station data
+    setEditStationFormData({
+      logo: null,
+      logoPreview: activeStation.logo || stationLogos[activeStation.id] || null,
+      stationName: activeStation.name || '',
+      apiConfig: activeStation.url || '',
+      schedules: activeStation.schedules || []
+    });
+    setEditStationModalOpen(true);
+  };
+
+  const handleEditStationClose = () => {
+    setEditStationModalOpen(false);
+    setEditStationFormData({
+      logo: null,
+      logoPreview: null,
+      stationName: '',
+      apiConfig: '',
+      schedules: []
+    });
+  };
+
+  const handleEditStationFormChange = (field, value) => {
+    setEditStationFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleEditLogoDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActiveEditLogo(true);
+    } else if (e.type === "dragleave") {
+      setDragActiveEditLogo(false);
+    }
+  };
+
+  const handleEditLogoDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveEditLogo(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleEditLogoFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleEditLogoChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleEditLogoFile(e.target.files[0]);
+    }
+  };
+
+  const handleEditLogoFile = (file) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditStationFormData(prev => ({
+          ...prev,
+          logo: file,
+          logoPreview: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddEditScheduleRow = () => {
+    const newSchedule = {
+      id: Date.now(),
+      dayOfWeek: '',
+      startTime: '',
+      endTime: '',
+      programName: ''
+    };
+    setEditStationFormData(prev => ({
+      ...prev,
+      schedules: [...prev.schedules, newSchedule]
+    }));
+  };
+
+  const handleEditScheduleChange = (id, field, value) => {
+    setEditStationFormData(prev => ({
+      ...prev,
+      schedules: prev.schedules.map(schedule => 
+        schedule.id === id 
+          ? { ...schedule, [field]: value }
+          : schedule
+      )
+    }));
+  };
+
+  const handleDeleteEditSchedule = (id) => {
+    setEditStationFormData(prev => ({
+      ...prev,
+      schedules: prev.schedules.filter(schedule => schedule.id !== id)
+    }));
+  };
+
+  const handleEditStationConfirm = () => {
+    if (!activeStation) return;
+
+    // Validate form data
+    if (!editStationFormData.stationName) {
+      alert('Please enter a station name');
+      return;
+    }
+    if (!editStationFormData.apiConfig) {
+      alert('Please enter API configuration');
+      return;
+    }
+
+    // Update the station
+    setStations(stations.map(station => 
+      station.id === activeStation.id
+        ? {
+            ...station,
+            name: editStationFormData.stationName,
+            url: editStationFormData.apiConfig,
+            logo: editStationFormData.logoPreview,
+            schedules: editStationFormData.schedules
+          }
+        : station
+    ));
+
+    console.log('Station updated:', editStationFormData);
+    alert('FM Station updated successfully!');
+    handleEditStationClose();
+  };
+
+  // Time input formatter
+  const formatTimeInput = (value) => {
+    // Remove non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Format as HH:MM
+    if (digits.length <= 2) {
+      return digits;
+    } else if (digits.length <= 4) {
+      return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+    }
+    return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+  };
+
+  const validateTime = (value) => {
+    if (!value) return true;
+    const match = value.match(/^(\d{2}):(\d{2})$/);
+    if (!match) return false;
+    const hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+  };
+
+  // DataGrid columns for Edit Station schedules
+  const editScheduleColumns = [
+    {
+      field: 'dayOfWeek',
+      headerName: 'Day of Week',
+      width: 180,
+      sortable: false,
+      renderCell: (params) => (
+        <TextField
+          select
+          value={params.value || ''}
+          onChange={(e) => {
+            handleEditScheduleChange(params.row.id, 'dayOfWeek', e.target.value);
+          }}
+          fullWidth
+          size="small"
+          variant="standard"
+          sx={{ 
+            '& .MuiInputBase-root': { 
+              fontSize: '0.875rem'
+            }
+          }}
+        >
+          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+            <MenuItem key={day} value={day}>
+              {day}
+            </MenuItem>
+          ))}
+        </TextField>
+      )
+    },
+    {
+      field: 'startTime',
+      headerName: 'Start Time (HH:MM)',
+      width: 180,
+      sortable: false,
+      renderCell: (params) => (
+        <TextField
+          value={params.value || ''}
+          onChange={(e) => {
+            const formatted = formatTimeInput(e.target.value);
+            handleEditScheduleChange(params.row.id, 'startTime', formatted);
+          }}
+          placeholder="00:00"
+          fullWidth
+          size="small"
+          variant="standard"
+          inputProps={{
+            maxLength: 5,
+            pattern: '[0-9:]*'
+          }}
+          error={params.value && !validateTime(params.value)}
+          sx={{ 
+            '& .MuiInputBase-root': { 
+              fontSize: '0.875rem'
+            }
+          }}
+        />
+      )
+    },
+    {
+      field: 'endTime',
+      headerName: 'End Time (HH:MM)',
+      width: 180,
+      sortable: false,
+      renderCell: (params) => (
+        <TextField
+          value={params.value || ''}
+          onChange={(e) => {
+            const formatted = formatTimeInput(e.target.value);
+            handleEditScheduleChange(params.row.id, 'endTime', formatted);
+          }}
+          placeholder="23:59"
+          fullWidth
+          size="small"
+          variant="standard"
+          inputProps={{
+            maxLength: 5,
+            pattern: '[0-9:]*'
+          }}
+          error={params.value && !validateTime(params.value)}
+          sx={{ 
+            '& .MuiInputBase-root': { 
+              fontSize: '0.875rem'
+            }
+          }}
+        />
+      )
+    },
+    {
+      field: 'programName',
+      headerName: 'Program Name',
+      width: 220,
+      sortable: false,
+      renderCell: (params) => (
+        <TextField
+          value={params.value || ''}
+          onChange={(e) => {
+            handleEditScheduleChange(params.row.id, 'programName', e.target.value);
+          }}
+          placeholder="Enter program name"
+          fullWidth
+          size="small"
+          variant="standard"
+          sx={{ 
+            '& .MuiInputBase-root': { 
+              fontSize: '0.875rem'
+            }
+          }}
+        />
+      )
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 100,
+      sortable: false,
+      renderCell: (params) => (
+        <IconButton
+          color="error"
+          size="small"
+          onClick={() => handleDeleteEditSchedule(params.row.id)}
+        >
+          <Delete />
+        </IconButton>
+      )
+    }
+  ];
+
+  // DataGrid columns for schedules
+  const scheduleColumns = [
+    {
+      field: 'dayOfWeek',
+      headerName: 'Day of Week',
+      width: 180,
+      sortable: false,
+      renderCell: (params) => (
+        <TextField
+          select
+          value={params.value || ''}
+          onChange={(e) => {
+            handleScheduleChange(params.row.id, 'dayOfWeek', e.target.value);
+          }}
+          fullWidth
+          size="small"
+          variant="standard"
+          sx={{ 
+            '& .MuiInputBase-root': { 
+              fontSize: '0.875rem'
+            }
+          }}
+        >
+          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+            <MenuItem key={day} value={day}>
+              {day}
+            </MenuItem>
+          ))}
+        </TextField>
+      )
+    },
+    {
+      field: 'startTime',
+      headerName: 'Start Time (HH:MM)',
+      width: 180,
+      sortable: false,
+      renderCell: (params) => (
+        <TextField
+          value={params.value || ''}
+          onChange={(e) => {
+            const formatted = formatTimeInput(e.target.value);
+            handleScheduleChange(params.row.id, 'startTime', formatted);
+          }}
+          placeholder="00:00"
+          fullWidth
+          size="small"
+          variant="standard"
+          inputProps={{
+            maxLength: 5,
+            pattern: '[0-9:]*'
+          }}
+          error={params.value && !validateTime(params.value)}
+          sx={{ 
+            '& .MuiInputBase-root': { 
+              fontSize: '0.875rem'
+            }
+          }}
+        />
+      )
+    },
+    {
+      field: 'endTime',
+      headerName: 'End Time (HH:MM)',
+      width: 180,
+      sortable: false,
+      renderCell: (params) => (
+        <TextField
+          value={params.value || ''}
+          onChange={(e) => {
+            const formatted = formatTimeInput(e.target.value);
+            handleScheduleChange(params.row.id, 'endTime', formatted);
+          }}
+          placeholder="23:59"
+          fullWidth
+          size="small"
+          variant="standard"
+          inputProps={{
+            maxLength: 5,
+            pattern: '[0-9:]*'
+          }}
+          error={params.value && !validateTime(params.value)}
+          sx={{ 
+            '& .MuiInputBase-root': { 
+              fontSize: '0.875rem'
+            }
+          }}
+        />
+      )
+    },
+    {
+      field: 'programName',
+      headerName: 'Program Name',
+      width: 220,
+      sortable: false,
+      renderCell: (params) => (
+        <TextField
+          value={params.value || ''}
+          onChange={(e) => {
+            handleScheduleChange(params.row.id, 'programName', e.target.value);
+          }}
+          placeholder="Enter program name"
+          fullWidth
+          size="small"
+          variant="standard"
+          sx={{ 
+            '& .MuiInputBase-root': { 
+              fontSize: '0.875rem'
+            }
+          }}
+        />
+      )
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 100,
+      sortable: false,
+      renderCell: (params) => (
+        <IconButton
+          color="error"
+          size="small"
+          onClick={() => handleDeleteSchedule(params.row.id)}
+        >
+          <Delete />
+        </IconButton>
+      )
+    }
+  ];
+
   return (
     <Stack spacing={0}>
       {/* Hidden Audio Element for Live Stream */}
@@ -599,6 +1175,11 @@ export default function CommunityManager() {
           {/* Add Button */}
           <Card
             elevation={0}
+            onClick={handleAddStationClick}
+            component="button"
+            role="button"
+            aria-label="Add FM Station"
+            tabIndex={0}
             sx={{
               minWidth: 100,
               p: 2,
@@ -693,6 +1274,7 @@ export default function CommunityManager() {
                         variant="outlined"
                         size="large"
                         startIcon={<Edit />}
+                        onClick={handleEditStationClick}
                         sx={{ minWidth: 120, py: 1.5 }}
                         >
                         Edit
@@ -1254,6 +1836,368 @@ export default function CommunityManager() {
             startIcon={<Save />}
           >
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add FM Station Modal */}
+      <Dialog
+        open={addStationModalOpen}
+        onClose={handleAddStationClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h5">Add FM Station</Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={4} sx={{ mt: 1 }}>
+            {/* Section 1: Logo Upload */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Station Logo
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Upload a web-optimized logo (recommended: WebP, PNG, or JPG format)
+              </Typography>
+              <Box
+                onDragEnter={handleLogoDrag}
+                onDragLeave={handleLogoDrag}
+                onDragOver={handleLogoDrag}
+                onDrop={handleLogoDrop}
+                onClick={() => logoInputRef.current?.click()}
+                sx={{
+                  border: '2px dashed',
+                  borderColor: dragActiveLogo ? 'primary.main' : 'divider',
+                  borderRadius: 2,
+                  p: 4,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  bgcolor: dragActiveLogo ? 'action.hover' : 'background.paper',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.hover'
+                  }
+                }}
+              >
+                {addStationFormData.logoPreview ? (
+                  <Box>
+                    <img 
+                      src={addStationFormData.logoPreview} 
+                      alt="Station logo preview" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '200px', 
+                        borderRadius: '8px',
+                        objectFit: 'contain'
+                      }} 
+                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                      Click or drag to replace logo
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={2} alignItems="center">
+                    <CloudUpload sx={{ fontSize: 48, color: 'text.secondary' }} />
+                    <Typography variant="body1" color="text.primary">
+                      Drag and drop a logo here, or click to select
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Supports: WebP, JPG, PNG, GIF (Web-optimized formats recommended)
+                    </Typography>
+                  </Stack>
+                )}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  style={{ display: 'none' }}
+                />
+              </Box>
+            </Box>
+
+            {/* Station Name */}
+            <Box>
+              <TextField
+                label="Station Name"
+                value={addStationFormData.stationName}
+                onChange={(e) => handleAddStationFormChange('stationName', e.target.value)}
+                fullWidth
+                placeholder="e.g., Kiss 92, 98.3 FM"
+                required
+              />
+            </Box>
+
+            {/* Section 2: Hosting Server Network API */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Hosting Server Network API
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Enter the API endpoint or streaming URL for this station
+              </Typography>
+              <TextField
+                value={addStationFormData.apiConfig}
+                onChange={(e) => handleAddStationFormChange('apiConfig', e.target.value)}
+                multiline
+                rows={4}
+                fullWidth
+                placeholder="e.g., https://stream.example.com/station.aac&#10;or&#10;{&#10;  &quot;url&quot;: &quot;https://api.example.com/stream&quot;,&#10;  &quot;apiKey&quot;: &quot;your-api-key&quot;&#10;}"
+                required
+              />
+            </Box>
+
+            {/* Section 3: Programme Time Slot */}
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Box>
+                  <Typography variant="h6">
+                    Programme Time Slot
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Add schedules for automatic recording sessions
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={handleAddScheduleRow}
+                  size="small"
+                >
+                  Add Schedule
+                </Button>
+              </Stack>
+
+              <Box sx={{ height: 400, width: '100%' }}>
+                <DataGrid
+                  rows={addStationFormData.schedules}
+                  columns={scheduleColumns}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { pageSize: 5 }
+                    }
+                  }}
+                  pageSizeOptions={[5, 10, 20]}
+                  disableRowSelectionOnClick
+                  disableColumnMenu
+                  sx={{
+                    '& .MuiDataGrid-cell': {
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      py: 1
+                    },
+                    '& .MuiDataGrid-row': {
+                      minHeight: '60px !important',
+                      maxHeight: '60px !important'
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
+          </Stack>
+        </DialogContent>
+
+        {/* Section 4: Confirmation */}
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button 
+            onClick={handleAddStationClose} 
+            variant="outlined" 
+            color="secondary"
+            size="large"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleAddStationConfirm} 
+            variant="contained" 
+            color="primary"
+            size="large"
+            startIcon={<Add />}
+          >
+            Confirm & Add Station
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit FM Station Modal */}
+      <Dialog
+        open={editStationModalOpen}
+        onClose={handleEditStationClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h5">Edit FM Station</Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={4} sx={{ mt: 1 }}>
+            {/* Section 1: Logo Upload */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Station Logo
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Upload a web-optimized logo (recommended: WebP, PNG, or JPG format)
+              </Typography>
+              <Box
+                onDragEnter={handleEditLogoDrag}
+                onDragLeave={handleEditLogoDrag}
+                onDragOver={handleEditLogoDrag}
+                onDrop={handleEditLogoDrop}
+                onClick={() => editLogoInputRef.current?.click()}
+                sx={{
+                  border: '2px dashed',
+                  borderColor: dragActiveEditLogo ? 'primary.main' : 'divider',
+                  borderRadius: 2,
+                  p: 4,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  bgcolor: dragActiveEditLogo ? 'action.hover' : 'background.paper',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.hover'
+                  }
+                }}
+              >
+                {editStationFormData.logoPreview ? (
+                  <Box>
+                    <img 
+                      src={editStationFormData.logoPreview} 
+                      alt="Station logo preview" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '200px', 
+                        borderRadius: '8px',
+                        objectFit: 'contain'
+                      }} 
+                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                      Click or drag to replace logo
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={2} alignItems="center">
+                    <CloudUpload sx={{ fontSize: 48, color: 'text.secondary' }} />
+                    <Typography variant="body1" color="text.primary">
+                      Drag and drop a logo here, or click to select
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Supports: WebP, JPG, PNG, GIF (Web-optimized formats recommended)
+                    </Typography>
+                  </Stack>
+                )}
+                <input
+                  ref={editLogoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditLogoChange}
+                  style={{ display: 'none' }}
+                />
+              </Box>
+            </Box>
+
+            {/* Station Name */}
+            <Box>
+              <TextField
+                label="Station Name"
+                value={editStationFormData.stationName}
+                onChange={(e) => handleEditStationFormChange('stationName', e.target.value)}
+                fullWidth
+                placeholder="e.g., Kiss 92, 98.3 FM"
+                required
+              />
+            </Box>
+
+            {/* Section 2: Hosting Server Network API */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Hosting Server Network API
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Enter the API endpoint or streaming URL for this station
+              </Typography>
+              <TextField
+                value={editStationFormData.apiConfig}
+                onChange={(e) => handleEditStationFormChange('apiConfig', e.target.value)}
+                multiline
+                rows={4}
+                fullWidth
+                placeholder="e.g., https://stream.example.com/station.aac&#10;or&#10;{&#10;  &quot;url&quot;: &quot;https://api.example.com/stream&quot;,&#10;  &quot;apiKey&quot;: &quot;your-api-key&quot;&#10;}"
+                required
+              />
+            </Box>
+
+            {/* Section 3: Programme Time Slot */}
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Box>
+                  <Typography variant="h6">
+                    Programme Time Slot
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Add schedules for automatic recording sessions
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={handleAddEditScheduleRow}
+                  size="small"
+                >
+                  Add Schedule
+                </Button>
+              </Stack>
+
+              <Box sx={{ height: 400, width: '100%' }}>
+                <DataGrid
+                  rows={editStationFormData.schedules}
+                  columns={editScheduleColumns}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { pageSize: 5 }
+                    }
+                  }}
+                  pageSizeOptions={[5, 10, 20]}
+                  disableRowSelectionOnClick
+                  disableColumnMenu
+                  sx={{
+                    '& .MuiDataGrid-cell': {
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      py: 1
+                    },
+                    '& .MuiDataGrid-row': {
+                      minHeight: '60px !important',
+                      maxHeight: '60px !important'
+                    }
+                  }}
+                />
+              </Box>
+            </Box>
+          </Stack>
+        </DialogContent>
+
+        {/* Section 4: Confirmation */}
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button 
+            onClick={handleEditStationClose} 
+            variant="outlined" 
+            color="secondary"
+            size="large"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleEditStationConfirm} 
+            variant="contained" 
+            color="primary"
+            size="large"
+            startIcon={<Save />}
+          >
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
