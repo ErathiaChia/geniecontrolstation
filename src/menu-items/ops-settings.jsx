@@ -10,7 +10,6 @@ const icons = {
 
 const opsSettings = {
   id: 'ops-settings',
-  title: 'Others',
   type: 'group',
   children: [
     {
@@ -24,4 +23,3 @@ const opsSettings = {
 };
 
 export default opsSettings;
-

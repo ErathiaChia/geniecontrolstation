@@ -19,10 +19,14 @@ const SamplePage = Loadable(lazy(() => import('pages/extra-pages/sample-page')))
 const OpsSettings = Loadable(lazy(() => import('pages/ops-settings')));
 
 // render - process pages
-const Application = Loadable(lazy(() => import('pages/process/application')));
-const DocumentAssessment = Loadable(lazy(() => import('pages/process/document-assessment')));
-const CandidateScreening = Loadable(lazy(() => import('pages/process/candidate-screening')));
-const Approval = Loadable(lazy(() => import('pages/process/pending-approval')));
+const Application = Loadable(lazy(() => import('pages/apprenticeship-process/application')));
+const DocumentAssessment = Loadable(lazy(() => import('pages/apprenticeship-process/document-assessment')));
+const CandidateScreening = Loadable(lazy(() => import('pages/apprenticeship-process/candidate-screening')));
+const Approval = Loadable(lazy(() => import('pages/apprenticeship-process/pending-approval')));
+
+// render - media pages
+const NewsVerification = Loadable(lazy(() => import('pages/media/news-verification')));
+const CommunityManager = Loadable(lazy(() => import('pages/media/community-manager')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -81,6 +85,19 @@ const MainRoutes = {
         {
           path: 'approval/:candidateId',
           element: <Approval />
+        }
+      ]
+    },
+    {
+      path: 'media',
+      children: [
+        {
+          path: 'news-verification',
+          element: <NewsVerification />
+        },
+        {
+          path: 'community-manager',
+          element: <CommunityManager />
         }
       ]
     }

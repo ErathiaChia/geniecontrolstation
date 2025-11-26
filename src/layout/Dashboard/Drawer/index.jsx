@@ -48,7 +48,9 @@ export default function MainDrawer({ window }) {
               width: DRAWER_WIDTH,
               borderRight: '1px solid',
               borderRightColor: 'divider',
-              boxShadow: 'inherit'
+              boxShadow: 'inherit',
+              display: 'flex',
+              flexDirection: 'column'
             }
           }}
         >

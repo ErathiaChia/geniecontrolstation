@@ -5,11 +5,13 @@ import dashboard from './dashboard';
 // import support from './support';
 import process from './process';
 import opsSettings from './ops-settings';
+import media from './media';
 
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems = {
-  items: [dashboard, process, opsSettings]
+  items: [dashboard, process, media],
+  bottomItems: [opsSettings]
 };
 
 export default menuItems;
