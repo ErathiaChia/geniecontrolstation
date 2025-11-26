@@ -10,9 +10,9 @@ export default function OpsSettings() {
   return (
     <Grid container spacing={3}>
       <Grid item xs={12}>
-        <MainCard title="Ops Settings">
+        <MainCard title="Settings">
           <Typography variant="body1" gutterBottom>
-            Welcome to the Ops Settings page. This page is designed to accommodate various operational settings and configurations.
+            Welcome to the Settings page. This page is designed to accommodate various operational settings and configurations.
           </Typography>
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" color="text.secondary">
