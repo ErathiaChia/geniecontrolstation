@@ -59,7 +59,6 @@ import {
   Save
 } from '@mui/icons-material';
 
-
 // helper function for MP3 encoding
 function audioBufferToMp3Blob(audioBuffer) {
   const numChannels = audioBuffer.numberOfChannels;
@@ -85,9 +84,7 @@ function audioBufferToMp3Blob(audioBuffer) {
       }
     }
 
-    let mp3buf = rightBuffer
-      ? mp3encoder.encodeBuffer(leftBuffer, rightBuffer)
-      : mp3encoder.encodeBuffer(leftBuffer);
+    let mp3buf = rightBuffer ? mp3encoder.encodeBuffer(leftBuffer, rightBuffer) : mp3encoder.encodeBuffer(leftBuffer);
 
     if (mp3buf.length > 0) mp3Data.push(mp3buf);
   }
@@ -102,54 +99,26 @@ function audioBufferToMp3Blob(audioBuffer) {
 
 // Station logo mapping
 const stationLogos = {
-  1: kiss92Logo,      // Kiss 92
-  2: fm983Logo,       // 98.3 FM
-  3: fm913Logo        // 91.3 FM
+  1: kiss92Logo, // Kiss 92
+  2: fm983Logo, // 98.3 FM
+  3: fm913Logo // 91.3 FM
 };
 
 export default function CommunityManager() {
   const [stations, setStations] = useState([
     { id: 1, name: 'Kiss 92', active: true, url: 'https://22283.live.streamtheworld.com/ONE_FM_913AAC.aac' },
     { id: 2, name: '98.3 FM', active: false, url: '' },
-    { id: 3, name: '91.3 FM', active: false, url: '' },
+    { id: 3, name: '91.3 FM', active: false, url: '' }
   ]);
 
   const [stationData, setStationData] = useState({
-    1: [
-      {
-        id: 1,
-        from: '2024-11-25 10:00:00',
-        to: '2024-11-25 10:15:00',
-        srt: "Welcome back to the morning show. Today we're discussing community guidelines...",
-        segmentCategory: 'Community',
-        agentResponse: 'Drafted a social media post highlighting the key points of the community guidelines discussion.',
-        clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' // Sample audio clip
-      },
-      {
-        id: 2,
-        from: '2024-11-25 10:15:00',
-        to: '2024-11-25 10:30:00',
-        srt: "In other news, local traffic updates suggest heavy congestion on the main highway...",
-        segmentCategory: 'Traffic',
-        agentResponse: 'Alert: Heavy congestion reported on the main highway. Plan your route accordingly! #TrafficUpdate',
-        clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' // Sample audio clip
-      },
-      {
-        id: 3,
-        from: '2024-11-25 10:30:00',
-        to: '2024-11-25 10:45:00',
-        srt: "Coming up next, an interview with the mayor about the new park initiatives...",
-        segmentCategory: 'Interview',
-        agentResponse: 'Upcoming: Exclusive interview with the Mayor regarding new park initiatives. Stay tuned!',
-        clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' // Sample audio clip
-      }
-    ],
+    1: [],
     2: [
       {
         id: 1,
         from: '2024-11-25 11:00:00',
         to: '2024-11-25 11:15:00',
-        srt: "Smooth jazz all morning long. Up next, some classic hits...",
+        srt: 'Smooth jazz all morning long. Up next, some classic hits...',
         segmentCategory: 'Music',
         agentResponse: 'Now playing: Smooth Jazz. Relax and enjoy the tunes. #SmoothJazz',
         clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' // Sample audio clip
@@ -160,20 +129,16 @@ export default function CommunityManager() {
         id: 1,
         from: '2024-11-25 12:00:00',
         to: '2024-11-25 12:15:00',
-        srt: "Rock on! We have a special guest in the studio today...",
+        srt: 'Rock on! We have a special guest in the studio today...',
         segmentCategory: 'Interview',
-        agentResponse: 'Special guest in the studio today! You don\'t want to miss this rock legend.',
+        agentResponse: "Special guest in the studio today! You don't want to miss this rock legend.",
         clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' // Sample audio clip
       }
     ]
   });
 
-  // Media Player States
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState('Ready');
-  const [downloadUrl, setDownloadUrl] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  // Media Player States - now per station
+  const [stationStates, setStationStates] = useState({});
 
   // Pagination States
   const [page, setPage] = useState(0);
@@ -236,18 +201,54 @@ export default function CommunityManager() {
   const [dragActiveEditLogo, setDragActiveEditLogo] = useState(false);
   const editLogoInputRef = useRef(null);
 
-  // Refs
-  const audioRef = useRef(null);
-  const recorderRef = useRef(null);
-  const chunksRef = useRef([]);
+  // Refs - now stored per station
+  const audioRefsMap = useRef({});
+  const recorderRefsMap = useRef({});
+  const chunksRefsMap = useRef({});
   const clipAudioRef = useRef(null);
+
+  // helper function to get or initialize station state
+  const getStationState = (stationId) => {
+    if (!stationStates[stationId]) {
+      return {
+        isPlaying: false,
+        isRecording: false,
+        status: 'Ready',
+        downloadUrl: null,
+        isProcessing: false
+      };
+    }
+    return stationStates[stationId];
+  };
+
+  // helper function to update station state
+  const updateStationState = (stationId, updates) => {
+    setStationStates((prev) => ({
+      ...prev,
+      [stationId]: {
+        ...getStationState(stationId),
+        ...updates
+      }
+    }));
+  };
 
   // Clip Player States
   const [playingClipId, setPlayingClipId] = useState(null);
 
-  const activeStation = stations.find(s => s.active);
-  const allData = activeStation ? (stationData[activeStation.id] || []) : [];
-  
+  const activeStation = stations.find((s) => s.active);
+  const allData = activeStation ? stationData[activeStation.id] || [] : [];
+
+  // get current station's state
+  const currentState = activeStation
+    ? getStationState(activeStation.id)
+    : {
+        isPlaying: false,
+        isRecording: false,
+        status: 'Ready',
+        downloadUrl: null,
+        isProcessing: false
+      };
+
   // Pagination calculations
   const currentData = allData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
@@ -261,108 +262,149 @@ export default function CommunityManager() {
   };
 
   const handlePlay = () => {
-    if (!audioRef.current) return;
+    if (!activeStation) return;
 
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-      setStatus('Paused');
+    // get or create audio element for this station
+    if (!audioRefsMap.current[activeStation.id]) {
+      const audio = new Audio(activeStation.url);
+      audio.crossOrigin = 'anonymous';
+      audio.onended = () => {
+        updateStationState(activeStation.id, { isPlaying: false });
+      };
+      audioRefsMap.current[activeStation.id] = audio;
+    }
+
+    const audioElement = audioRefsMap.current[activeStation.id];
+    const state = getStationState(activeStation.id);
+
+    if (state.isPlaying) {
+      audioElement.pause();
+      updateStationState(activeStation.id, {
+        isPlaying: false,
+        status: 'Paused'
+      });
     } else {
-      audioRef.current.play()
+      audioElement
+        .play()
         .then(() => {
-          setIsPlaying(true);
-          setStatus('Playing');
+          updateStationState(activeStation.id, {
+            isPlaying: true,
+            status: 'Playing'
+          });
         })
-        .catch(err => {
-          console.error("Playback failed:", err);
-          setStatus('Playback Error');
+        .catch((err) => {
+          console.error('Playback failed:', err);
+          updateStationState(activeStation.id, {
+            status: 'Playback Error'
+          });
         });
     }
   };
 
   const handleRecord = () => {
-    if (isRecording) {
-      // Stop Recording
-      if (recorderRef.current) {
-        recorderRef.current.stop();
-        setIsRecording(false);
-        setStatus('Stopping...');
+    if (!activeStation) return;
+
+    const state = getStationState(activeStation.id);
+
+    if (state.isRecording) {
+      // stop recording
+      const recorder = recorderRefsMap.current[activeStation.id];
+      if (recorder) {
+        recorder.stop();
+        updateStationState(activeStation.id, {
+          isRecording: false,
+          status: 'Stopping...'
+        });
       }
     } else {
-      // Start Recording
+      // start recording
       try {
-        if (!audioRef.current) return;
+        // get or create audio element for this station
+        if (!audioRefsMap.current[activeStation.id]) {
+          const audio = new Audio(activeStation.url);
+          audio.crossOrigin = 'anonymous';
+          audio.onended = () => {
+            updateStationState(activeStation.id, { isPlaying: false });
+          };
+          audioRefsMap.current[activeStation.id] = audio;
+        }
 
-        // Need to capture stream. Note: captureStream() support varies. 
-        // For cross-origin audio, this might be restricted unless CORS is handled correctly.
-        // The reference used crossorigin="anonymous"
-        const stream = audioRef.current.captureStream ? audioRef.current.captureStream() : audioRef.current.mozCaptureStream();
-        
+        const audioElement = audioRefsMap.current[activeStation.id];
+
+        // need to capture stream
+        const stream = audioElement.captureStream ? audioElement.captureStream() : audioElement.mozCaptureStream();
+
         if (!stream) {
-            alert("Stream capture not supported in this browser.");
-            return;
+          alert('Stream capture not supported in this browser.');
+          return;
         }
 
         const recorder = new MediaRecorder(stream);
-        recorderRef.current = recorder;
-        chunksRef.current = [];
+        recorderRefsMap.current[activeStation.id] = recorder;
+        chunksRefsMap.current[activeStation.id] = [];
 
         recorder.ondataavailable = (e) => {
           if (e.data.size > 0) {
-            chunksRef.current.push(e.data);
+            chunksRefsMap.current[activeStation.id].push(e.data);
           }
         };
 
         recorder.onstop = async () => {
-          setStatus('Converting to MP3...');
-          setIsProcessing(true);
+          const stationId = activeStation.id;
+          updateStationState(stationId, {
+            status: 'Converting to MP3...',
+            isProcessing: true
+          });
 
           try {
-            const webmBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+            const webmBlob = new Blob(chunksRefsMap.current[stationId], { type: 'audio/webm' });
             const arrayBuffer = await webmBlob.arrayBuffer();
-            
+
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             const audioCtx = new AudioCtx();
             const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
             const mp3Blob = audioBufferToMp3Blob(audioBuffer);
             const url = URL.createObjectURL(mp3Blob);
-            
-            setDownloadUrl(url);
-            setStatus('Recording complete');
+
+            updateStationState(stationId, {
+              downloadUrl: url,
+              status: 'Recording complete',
+              isProcessing: false
+            });
           } catch (error) {
-            console.error("Conversion failed:", error);
-            setStatus('Conversion Failed');
-          } finally {
-            setIsProcessing(false);
+            console.error('Conversion failed:', error);
+            updateStationState(stationId, {
+              status: 'Conversion Failed',
+              isProcessing: false
+            });
           }
         };
 
         recorder.start();
-        setIsRecording(true);
-        setStatus('Recording...');
+        updateStationState(activeStation.id, {
+          isRecording: true,
+          status: 'Recording...'
+        });
       } catch (e) {
-        console.error("Recording failed:", e);
-        setStatus('Recording Error');
+        console.error('Recording failed:', e);
+        updateStationState(activeStation.id, {
+          status: 'Recording Error'
+        });
       }
     }
   };
 
   const handleStationChange = (id) => {
-    setStations(stations.map(s => ({
-      ...s,
-      active: s.id === id
-    })));
-    // Reset player state on station change
-    setIsPlaying(false);
-    setIsRecording(false);
-    setDownloadUrl(null);
-    setStatus('Ready');
-    // Reset pagination on station change
+    setStations(
+      stations.map((s) => ({
+        ...s,
+        active: s.id === id
+      }))
+    );
+    // just reset pagination on station change
+    // don't reset recording/playing states - they continue in background
     setPage(0);
-    if (audioRef.current) {
-        audioRef.current.load(); // Reload with new source
-    }
   };
 
   const handleEditClick = (row) => {
@@ -393,20 +435,16 @@ export default function CommunityManager() {
     if (!editingRow || !activeStation) return;
 
     // Update the data in stationData
-    setStationData(prev => ({
+    setStationData((prev) => ({
       ...prev,
-      [activeStation.id]: prev[activeStation.id].map(item => 
-        item.id === editingRow.id 
-          ? { ...item, ...editFormData }
-          : item
-      )
+      [activeStation.id]: prev[activeStation.id].map((item) => (item.id === editingRow.id ? { ...item, ...editFormData } : item))
     }));
 
     handleEditClose();
   };
 
   const handleFormChange = (field, value) => {
-    setEditFormData(prev => ({
+    setEditFormData((prev) => ({
       ...prev,
       [field]: value
     }));
@@ -434,7 +472,7 @@ export default function CommunityManager() {
   };
 
   const handleShareFormChange = (field, value) => {
-    setShareFormData(prev => ({
+    setShareFormData((prev) => ({
       ...prev,
       [field]: value
     }));
@@ -443,9 +481,9 @@ export default function CommunityManager() {
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setDragActive(false);
     }
   };
@@ -454,7 +492,7 @@ export default function CommunityManager() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleImageFile(e.dataTransfer.files[0]);
     }
@@ -470,7 +508,7 @@ export default function CommunityManager() {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setShareFormData(prev => ({
+        setShareFormData((prev) => ({
           ...prev,
           headerImage: file,
           headerImagePreview: reader.result
@@ -510,7 +548,7 @@ export default function CommunityManager() {
   };
 
   const handleRegenerateFormChange = (field, value) => {
-    setRegenerateFormData(prev => ({
+    setRegenerateFormData((prev) => ({
       ...prev,
       [field]: value
     }));
@@ -520,12 +558,12 @@ export default function CommunityManager() {
     if (!regeneratingRow || !activeStation) return;
 
     // Update the data in stationData
-    setStationData(prev => ({
+    setStationData((prev) => ({
       ...prev,
-      [activeStation.id]: prev[activeStation.id].map(item => 
-        item.id === regeneratingRow.id 
-          ? { 
-              ...item, 
+      [activeStation.id]: prev[activeStation.id].map((item) =>
+        item.id === regeneratingRow.id
+          ? {
+              ...item,
               srt: regenerateFormData.srt,
               segmentCategory: regenerateFormData.segmentCategory,
               agentResponse: regenerateFormData.agentResponse
@@ -556,12 +594,13 @@ export default function CommunityManager() {
     } else {
       // Play the new clip
       clipAudioRef.current.src = row.clipUrl;
-      clipAudioRef.current.play()
+      clipAudioRef.current
+        .play()
         .then(() => {
           setPlayingClipId(row.id);
         })
-        .catch(err => {
-          console.error("Clip playback failed:", err);
+        .catch((err) => {
+          console.error('Clip playback failed:', err);
           alert('Failed to play clip. Please check the audio URL.');
         });
     }
@@ -591,7 +630,7 @@ export default function CommunityManager() {
   };
 
   const handleAddStationFormChange = (field, value) => {
-    setAddStationFormData(prev => ({
+    setAddStationFormData((prev) => ({
       ...prev,
       [field]: value
     }));
@@ -600,9 +639,9 @@ export default function CommunityManager() {
   const handleLogoDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActiveLogo(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setDragActiveLogo(false);
     }
   };
@@ -611,7 +650,7 @@ export default function CommunityManager() {
     e.preventDefault();
     e.stopPropagation();
     setDragActiveLogo(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleLogoFile(e.dataTransfer.files[0]);
     }
@@ -627,7 +666,7 @@ export default function CommunityManager() {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAddStationFormData(prev => ({
+        setAddStationFormData((prev) => ({
           ...prev,
           logo: file,
           logoPreview: reader.result
@@ -645,27 +684,23 @@ export default function CommunityManager() {
       endTime: '',
       programName: ''
     };
-    setAddStationFormData(prev => ({
+    setAddStationFormData((prev) => ({
       ...prev,
       schedules: [...prev.schedules, newSchedule]
     }));
   };
 
   const handleScheduleChange = (id, field, value) => {
-    setAddStationFormData(prev => ({
+    setAddStationFormData((prev) => ({
       ...prev,
-      schedules: prev.schedules.map(schedule => 
-        schedule.id === id 
-          ? { ...schedule, [field]: value }
-          : schedule
-      )
+      schedules: prev.schedules.map((schedule) => (schedule.id === id ? { ...schedule, [field]: value } : schedule))
     }));
   };
 
   const handleDeleteSchedule = (id) => {
-    setAddStationFormData(prev => ({
+    setAddStationFormData((prev) => ({
       ...prev,
-      schedules: prev.schedules.filter(schedule => schedule.id !== id)
+      schedules: prev.schedules.filter((schedule) => schedule.id !== id)
     }));
   };
 
@@ -695,7 +730,7 @@ export default function CommunityManager() {
     };
 
     setStations([...stations, newStation]);
-    setStationData(prev => ({
+    setStationData((prev) => ({
       ...prev,
       [newStation.id]: []
     }));
@@ -735,7 +770,7 @@ export default function CommunityManager() {
   };
 
   const handleEditStationFormChange = (field, value) => {
-    setEditStationFormData(prev => ({
+    setEditStationFormData((prev) => ({
       ...prev,
       [field]: value
     }));
@@ -744,9 +779,9 @@ export default function CommunityManager() {
   const handleEditLogoDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActiveEditLogo(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setDragActiveEditLogo(false);
     }
   };
@@ -755,7 +790,7 @@ export default function CommunityManager() {
     e.preventDefault();
     e.stopPropagation();
     setDragActiveEditLogo(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleEditLogoFile(e.dataTransfer.files[0]);
     }
@@ -771,7 +806,7 @@ export default function CommunityManager() {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setEditStationFormData(prev => ({
+        setEditStationFormData((prev) => ({
           ...prev,
           logo: file,
           logoPreview: reader.result
@@ -789,27 +824,23 @@ export default function CommunityManager() {
       endTime: '',
       programName: ''
     };
-    setEditStationFormData(prev => ({
+    setEditStationFormData((prev) => ({
       ...prev,
       schedules: [...prev.schedules, newSchedule]
     }));
   };
 
   const handleEditScheduleChange = (id, field, value) => {
-    setEditStationFormData(prev => ({
+    setEditStationFormData((prev) => ({
       ...prev,
-      schedules: prev.schedules.map(schedule => 
-        schedule.id === id 
-          ? { ...schedule, [field]: value }
-          : schedule
-      )
+      schedules: prev.schedules.map((schedule) => (schedule.id === id ? { ...schedule, [field]: value } : schedule))
     }));
   };
 
   const handleDeleteEditSchedule = (id) => {
-    setEditStationFormData(prev => ({
+    setEditStationFormData((prev) => ({
       ...prev,
-      schedules: prev.schedules.filter(schedule => schedule.id !== id)
+      schedules: prev.schedules.filter((schedule) => schedule.id !== id)
     }));
   };
 
@@ -827,17 +858,19 @@ export default function CommunityManager() {
     }
 
     // Update the station
-    setStations(stations.map(station => 
-      station.id === activeStation.id
-        ? {
-            ...station,
-            name: editStationFormData.stationName,
-            url: editStationFormData.apiConfig,
-            logo: editStationFormData.logoPreview,
-            schedules: editStationFormData.schedules
-          }
-        : station
-    ));
+    setStations(
+      stations.map((station) =>
+        station.id === activeStation.id
+          ? {
+              ...station,
+              name: editStationFormData.stationName,
+              url: editStationFormData.apiConfig,
+              logo: editStationFormData.logoPreview,
+              schedules: editStationFormData.schedules
+            }
+          : station
+      )
+    );
 
     console.log('Station updated:', editStationFormData);
     alert('FM Station updated successfully!');
@@ -848,7 +881,7 @@ export default function CommunityManager() {
   const formatTimeInput = (value) => {
     // Remove non-digits
     const digits = value.replace(/\D/g, '');
-    
+
     // Format as HH:MM
     if (digits.length <= 2) {
       return digits;
@@ -884,8 +917,8 @@ export default function CommunityManager() {
           fullWidth
           size="small"
           variant="standard"
-          sx={{ 
-            '& .MuiInputBase-root': { 
+          sx={{
+            '& .MuiInputBase-root': {
               fontSize: '0.875rem'
             }
           }}
@@ -919,8 +952,8 @@ export default function CommunityManager() {
             pattern: '[0-9:]*'
           }}
           error={params.value && !validateTime(params.value)}
-          sx={{ 
-            '& .MuiInputBase-root': { 
+          sx={{
+            '& .MuiInputBase-root': {
               fontSize: '0.875rem'
             }
           }}
@@ -948,8 +981,8 @@ export default function CommunityManager() {
             pattern: '[0-9:]*'
           }}
           error={params.value && !validateTime(params.value)}
-          sx={{ 
-            '& .MuiInputBase-root': { 
+          sx={{
+            '& .MuiInputBase-root': {
               fontSize: '0.875rem'
             }
           }}
@@ -971,8 +1004,8 @@ export default function CommunityManager() {
           fullWidth
           size="small"
           variant="standard"
-          sx={{ 
-            '& .MuiInputBase-root': { 
+          sx={{
+            '& .MuiInputBase-root': {
               fontSize: '0.875rem'
             }
           }}
@@ -985,11 +1018,7 @@ export default function CommunityManager() {
       width: 100,
       sortable: false,
       renderCell: (params) => (
-        <IconButton
-          color="error"
-          size="small"
-          onClick={() => handleDeleteEditSchedule(params.row.id)}
-        >
+        <IconButton color="error" size="small" onClick={() => handleDeleteEditSchedule(params.row.id)}>
           <Delete />
         </IconButton>
       )
@@ -1013,8 +1042,8 @@ export default function CommunityManager() {
           fullWidth
           size="small"
           variant="standard"
-          sx={{ 
-            '& .MuiInputBase-root': { 
+          sx={{
+            '& .MuiInputBase-root': {
               fontSize: '0.875rem'
             }
           }}
@@ -1048,8 +1077,8 @@ export default function CommunityManager() {
             pattern: '[0-9:]*'
           }}
           error={params.value && !validateTime(params.value)}
-          sx={{ 
-            '& .MuiInputBase-root': { 
+          sx={{
+            '& .MuiInputBase-root': {
               fontSize: '0.875rem'
             }
           }}
@@ -1077,8 +1106,8 @@ export default function CommunityManager() {
             pattern: '[0-9:]*'
           }}
           error={params.value && !validateTime(params.value)}
-          sx={{ 
-            '& .MuiInputBase-root': { 
+          sx={{
+            '& .MuiInputBase-root': {
               fontSize: '0.875rem'
             }
           }}
@@ -1100,8 +1129,8 @@ export default function CommunityManager() {
           fullWidth
           size="small"
           variant="standard"
-          sx={{ 
-            '& .MuiInputBase-root': { 
+          sx={{
+            '& .MuiInputBase-root': {
               fontSize: '0.875rem'
             }
           }}
@@ -1114,11 +1143,7 @@ export default function CommunityManager() {
       width: 100,
       sortable: false,
       renderCell: (params) => (
-        <IconButton
-          color="error"
-          size="small"
-          onClick={() => handleDeleteSchedule(params.row.id)}
-        >
+        <IconButton color="error" size="small" onClick={() => handleDeleteSchedule(params.row.id)}>
           <Delete />
         </IconButton>
       )
@@ -1127,19 +1152,8 @@ export default function CommunityManager() {
 
   return (
     <Stack spacing={0}>
-      {/* Hidden Audio Element for Live Stream */}
-      <audio 
-        ref={audioRef} 
-        src={activeStation?.url} 
-        crossOrigin="anonymous"
-        onEnded={() => setIsPlaying(false)}
-      />
-      
       {/* Hidden Audio Element for Clips */}
-      <audio 
-        ref={clipAudioRef}
-        onEnded={handleClipEnded}
-      />
+      <audio ref={clipAudioRef} onEnded={handleClipEnded} />
 
       {/* 1. FM Radio Station Section */}
       <Box>
@@ -1171,7 +1185,7 @@ export default function CommunityManager() {
               </Typography>
             </Card>
           ))}
-          
+
           {/* Add Button */}
           <Card
             elevation={0}
@@ -1207,247 +1221,235 @@ export default function CommunityManager() {
       {/* 2. Contents Section */}
       <Box>
         <Stack spacing={4}>
-          
           {/* 2.1 Media Player */}
-            <Box 
-              sx={(theme) => ({ 
-                bgcolor: 'background.paper',
-                border: '1px solid', 
-                borderColor: 'divider', 
-                borderRadius: 1,
-                p: 3,
-                boxShadow: theme.vars?.customShadows?.z1 || theme.customShadows?.z1 || theme.shadows[1]
-              })}
-            >
-              <Grid container spacing={3} alignItems="center">
-                {/* Icon Area */}
-                <Grid item xs={12} md={3} lg={2}>
-                  <Box
-                    sx={{
-                      width: '100%',
-                      aspectRatio: '1/1', // Keep it square
-                      // bgcolor: 'grey.100',
-                      borderRadius: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      // border: '1px solid',
-                      // borderColor: 'divider'
-                    }}
-                  >
-                    <img 
-                      src={stationLogos[activeStation?.id] || kiss92Logo} 
-                      alt={activeStation?.name || "Radio Station"} 
-                      style={{ width: '192px', height: '96px', objectFit: 'cover' }}
-                    />
-                  </Box>
-                </Grid>
-
-                {/* Controls Area */}
-                <Grid item xs={12} md={9} lg={10}>
-                  <Stack spacing={2}>
-                    <Stack direction="row" spacing={2} flexWrap="wrap" alignItems="center" justifyContent="space-between">
-                        <Stack direction="row" spacing={2} flexWrap="wrap" alignItems="center">
-                            <Button
-                            variant="contained"
-                            size="large"
-                            startIcon={isPlaying ? <Pause /> : <PlayArrow />}
-                            onClick={handlePlay}
-                            sx={{ minWidth: 120, py: 1.5 }}
-                            >
-                            {isPlaying ? 'Pause' : 'Play'}
-                            </Button>
-                            <Button
-                            variant="contained"
-                            size="large"
-                            color={isRecording ? "error" : "success"}
-                            startIcon={isProcessing ? <CircularProgress size={20} color="inherit" /> : <FiberManualRecord />}
-                            endIcon={!isProcessing && <Stop />}
-                            onClick={handleRecord}
-                            disabled={isProcessing}
-                            sx={{ minWidth: 160, py: 1.5 }}
-                            >
-                            {isRecording ? 'Stop Recording' : 'Start Recording'}
-                            </Button>
-                        </Stack>
-                        <Button
-                        variant="outlined"
-                        size="large"
-                        startIcon={<Edit />}
-                        onClick={handleEditStationClick}
-                        sx={{ minWidth: 120, py: 1.5 }}
-                        >
-                        Edit
-                        </Button>
-                    </Stack>
-                    
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <Typography variant="body2" color="text.secondary">
-                            Status: <strong>{status}</strong>
-                        </Typography>
-                        {downloadUrl && (
-                            <Button 
-                                component="a" 
-                                href={downloadUrl} 
-                                download={`recording_${new Date().toISOString()}.mp3`}
-                                size="small"
-                                variant="text"
-                            >
-                                Download MP3
-                            </Button>
-                        )}
-                    </Stack>
-                  </Stack>
-                </Grid>
+          <Box
+            sx={(theme) => ({
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1,
+              p: 3,
+              boxShadow: theme.vars?.customShadows?.z1 || theme.customShadows?.z1 || theme.shadows[1]
+            })}
+          >
+            <Grid container spacing={3} alignItems="center">
+              {/* Icon Area */}
+              <Grid item xs={12} md={3} lg={2}>
+                <Box
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '1/1', // Keep it square
+                    // bgcolor: 'grey.100',
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                    // border: '1px solid',
+                    // borderColor: 'divider'
+                  }}
+                >
+                  <img
+                    src={stationLogos[activeStation?.id] || kiss92Logo}
+                    alt={activeStation?.name || 'Radio Station'}
+                    style={{ width: '192px', height: '96px', objectFit: 'cover' }}
+                  />
+                </Box>
               </Grid>
-            </Box>
 
-            {/* 2.2 Data Grid Section */}
-            <Box>
-              {/* Filters */}
-              <Stack 
-                direction="row" 
-                justifyContent="space-between"
-                alignItems="center" 
-                spacing={1} 
-                sx={{ mb: 2 }}
-              >
-                <Typography variant="h4">{activeStation?.name} - Recorded Segments</Typography>
-                <Stack direction="row" spacing={1}>
-                  <Button variant="outlined" startIcon={<MoreHoriz />}>Action</Button>
-                  <Button variant="outlined" startIcon={<Sort />}>Sort</Button>
-                  <Button variant="outlined" startIcon={<FilterList />}>Filter</Button>
+              {/* Controls Area */}
+              <Grid item xs={12} md={9} lg={10}>
+                <Stack spacing={2}>
+                  <Stack direction="row" spacing={2} flexWrap="wrap" alignItems="center" justifyContent="space-between">
+                    <Stack direction="row" spacing={2} flexWrap="wrap" alignItems="center">
+                      <Button
+                        variant="contained"
+                        size="large"
+                        startIcon={currentState.isPlaying ? <Pause /> : <PlayArrow />}
+                        onClick={handlePlay}
+                        sx={{ minWidth: 120, py: 1.5 }}
+                      >
+                        {currentState.isPlaying ? 'Pause' : 'Play'}
+                      </Button>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        color={currentState.isRecording ? 'error' : 'success'}
+                        startIcon={currentState.isProcessing ? <CircularProgress size={20} color="inherit" /> : <FiberManualRecord />}
+                        endIcon={!currentState.isProcessing && <Stop />}
+                        onClick={handleRecord}
+                        disabled={currentState.isProcessing}
+                        sx={{ minWidth: 160, py: 1.5 }}
+                      >
+                        {currentState.isRecording ? 'Stop Recording' : 'Start Recording'}
+                      </Button>
+                    </Stack>
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      startIcon={<Edit />}
+                      onClick={handleEditStationClick}
+                      sx={{ minWidth: 120, py: 1.5 }}
+                    >
+                      Edit
+                    </Button>
+                  </Stack>
+
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Typography variant="body2" color="text.secondary">
+                      Status: <strong>{currentState.status}</strong>
+                    </Typography>
+                    {currentState.downloadUrl && (
+                      <Button
+                        component="a"
+                        href={currentState.downloadUrl}
+                        download={`recording_${new Date().toISOString()}.mp3`}
+                        size="small"
+                        variant="text"
+                      >
+                        Download MP3
+                      </Button>
+                    )}
+                  </Stack>
                 </Stack>
-              </Stack>
+              </Grid>
+            </Grid>
+          </Box>
 
-              {/* Table */}
-              <TableContainer component={Paper} variant="outlined">
-                <Table sx={{ minWidth: 650 }} aria-label="community manager table">
-                  <TableHead>
-                    <TableRow>
+          {/* 2.2 Data Grid Section */}
+          <Box>
+            {/* Filters */}
+            <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+              <Typography variant="h4">{activeStation?.name} - Recorded Segments</Typography>
+              <Stack direction="row" spacing={1}>
+                <Button variant="outlined" startIcon={<MoreHoriz />}>
+                  Action
+                </Button>
+                <Button variant="outlined" startIcon={<Sort />}>
+                  Sort
+                </Button>
+                <Button variant="outlined" startIcon={<FilterList />}>
+                  Filter
+                </Button>
+              </Stack>
+            </Stack>
+
+            {/* Table */}
+            <TableContainer component={Paper} variant="outlined">
+              <Table sx={{ minWidth: 650 }} aria-label="community manager table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell padding="checkbox">
+                      <Checkbox />
+                    </TableCell>
+                    <TableCell>DateTime (From)</TableCell>
+                    <TableCell>DateTime (To)</TableCell>
+                    <TableCell align="center">Clip</TableCell>
+                    <TableCell>SRT Content</TableCell>
+                    <TableCell>Segment Category</TableCell>
+                    <TableCell>Agent Response</TableCell>
+                    <TableCell align="center">Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {currentData.map((row) => (
+                    <TableRow key={row.id}>
                       <TableCell padding="checkbox">
                         <Checkbox />
                       </TableCell>
-                      <TableCell>DateTime (From)</TableCell>
-                      <TableCell>DateTime (To)</TableCell>
-                      <TableCell align="center">Clip</TableCell>
-                      <TableCell>SRT Content</TableCell>
-                      <TableCell>Segment Category</TableCell>
-                      <TableCell>Agent Response</TableCell>
-                      <TableCell align="center">Action</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {currentData.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell padding="checkbox">
-                          <Checkbox />
-                        </TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.from}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.to}</TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            color={playingClipId === row.id ? "error" : "primary"}
-                            onClick={() => handlePlayClip(row)}
-                            disabled={!row.clipUrl}
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.from}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.to}</TableCell>
+                      <TableCell align="center">
+                        <IconButton
+                          color={playingClipId === row.id ? 'error' : 'primary'}
+                          onClick={() => handlePlayClip(row)}
+                          disabled={!row.clipUrl}
+                          sx={{
+                            transition: 'all 0.2s ease-in-out',
+                            '&:hover': {
+                              transform: 'scale(1.1)'
+                            }
+                          }}
+                        >
+                          {playingClipId === row.id ? <Stop /> : <PlayArrow />}
+                        </IconButton>
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 300 }}>
+                        <Typography variant="body2" noWrap>
+                          {row.srt}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={row.segmentCategory} size="small" variant="outlined" />
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 300 }}>
+                        <Typography variant="body2" noWrap>
+                          {row.agentResponse}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Stack direction="row" spacing={1} justifyContent="center">
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="warning"
+                            startIcon={<Edit />}
+                            onClick={() => handleEditClick(row)}
+                            sx={{ minWidth: 'auto', px: 1, whiteSpace: 'nowrap' }}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            startIcon={<AutoFixHigh />}
+                            onClick={() => handleRegenerateClick(row)}
                             sx={{
-                              transition: 'all 0.2s ease-in-out',
+                              minWidth: 'auto',
+                              px: 1,
+                              background: 'linear-gradient(45deg, #673ab7, #2196f3)',
+                              color: 'white',
                               '&:hover': {
-                                transform: 'scale(1.1)'
+                                background: 'linear-gradient(45deg, #5e35b1, #1e88e5)'
                               }
                             }}
                           >
-                            {playingClipId === row.id ? <Stop /> : <PlayArrow />}
-                          </IconButton>
-                        </TableCell>
-                        <TableCell sx={{ maxWidth: 300 }}>
-                          <Typography variant="body2" noWrap>
-                            {row.srt}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={row.segmentCategory} size="small" variant="outlined" />
-                        </TableCell>
-                        <TableCell sx={{ maxWidth: 300 }}>
-                          <Typography variant="body2" noWrap>
-                            {row.agentResponse}
-                          </Typography>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Stack direction="row" spacing={1} justifyContent="center">
-                            <Button 
-                              size="small" 
-                              variant="contained" 
-                              color="warning"
-                              startIcon={<Edit />}
-                              onClick={() => handleEditClick(row)}
-                              sx={{ minWidth: 'auto', px: 1, whiteSpace: 'nowrap' }}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              size="small" 
-                              variant="contained" 
-                              startIcon={<AutoFixHigh />}
-                              onClick={() => handleRegenerateClick(row)}
-                              sx={{ 
-                                minWidth: 'auto', 
-                                px: 1,
-                                background: 'linear-gradient(45deg, #673ab7, #2196f3)',
-                                color: 'white',
-                                '&:hover': {
-                                    background: 'linear-gradient(45deg, #5e35b1, #1e88e5)'
-                                }
-                              }}
-                            >
-                              Regenerate
-                            </Button>
-                            <Button 
-                              size="small" 
-                              variant="contained" 
-                              color="error"
-                              startIcon={<Delete />}
-                              sx={{ minWidth: 'auto', px: 1 }}
-                            >
-                              Delete
-                            </Button>
-                            <Button 
-                              size="small" 
-                              variant="contained" 
-                              color="primary"
-                              startIcon={<Share />}
-                              onClick={() => handleShareClick(row)}
-                              sx={{ minWidth: 'auto', px: 1 }}
-                            >
-                              Share
-                            </Button>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <TablePagination
-                  component="div"
-                  count={allData.length}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  rowsPerPage={rowsPerPage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                  rowsPerPageOptions={[5, 10, 25, 50]}
-                />
-              </TableContainer>
-            </Box>
-          </Stack>
+                            Regenerate
+                          </Button>
+                          <Button size="small" variant="contained" color="error" startIcon={<Delete />} sx={{ minWidth: 'auto', px: 1 }}>
+                            Delete
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="primary"
+                            startIcon={<Share />}
+                            onClick={() => handleShareClick(row)}
+                            sx={{ minWidth: 'auto', px: 1 }}
+                          >
+                            Share
+                          </Button>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <TablePagination
+                component="div"
+                count={allData.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+              />
+            </TableContainer>
+          </Box>
+        </Stack>
       </Box>
 
       {/* Edit Modal */}
-      <Dialog 
-        open={editModalOpen} 
-        onClose={handleEditClose}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={editModalOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
         <DialogTitle>
           <Typography variant="h5">Edit Segment Information</Typography>
         </DialogTitle>
@@ -1461,7 +1463,7 @@ export default function CommunityManager() {
               onChange={(e) => handleFormChange('from', e.target.value)}
               fullWidth
               InputLabelProps={{
-                shrink: true,
+                shrink: true
               }}
             />
 
@@ -1473,7 +1475,7 @@ export default function CommunityManager() {
               onChange={(e) => handleFormChange('to', e.target.value)}
               fullWidth
               InputLabelProps={{
-                shrink: true,
+                shrink: true
               }}
             />
 
@@ -1526,12 +1528,7 @@ export default function CommunityManager() {
       </Dialog>
 
       {/* Share Modal */}
-      <Dialog 
-        open={shareModalOpen} 
-        onClose={handleShareClose}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={shareModalOpen} onClose={handleShareClose} maxWidth="md" fullWidth>
         <DialogTitle>
           <Typography variant="h5">Share Content</Typography>
         </DialogTitle>
@@ -1565,15 +1562,15 @@ export default function CommunityManager() {
               >
                 {shareFormData.headerImagePreview ? (
                   <Box>
-                    <img 
-                      src={shareFormData.headerImagePreview} 
-                      alt="Header preview" 
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '300px', 
+                    <img
+                      src={shareFormData.headerImagePreview}
+                      alt="Header preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '300px',
                         borderRadius: '8px',
                         objectFit: 'contain'
-                      }} 
+                      }}
                     />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                       Click or drag to replace image
@@ -1590,13 +1587,7 @@ export default function CommunityManager() {
                     </Typography>
                   </Stack>
                 )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ display: 'none' }}
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
               </Box>
             </Box>
 
@@ -1727,12 +1718,7 @@ export default function CommunityManager() {
       </Dialog>
 
       {/* Regenerate Modal */}
-      <Dialog
-        open={regenerateModalOpen}
-        onClose={handleRegenerateClose}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={regenerateModalOpen} onClose={handleRegenerateClose} maxWidth="md" fullWidth>
         <DialogTitle>
           <Typography variant="h5">Regenerate Content</Typography>
         </DialogTitle>
@@ -1805,9 +1791,9 @@ export default function CommunityManager() {
                   fullWidth
                   placeholder="E.g., Make the tone more professional, summarize in bullet points..."
                 />
-                <Button 
+                <Button
                   onClick={handleRegenerate}
-                  variant="contained" 
+                  variant="contained"
                   startIcon={<AutoFixHigh />}
                   sx={{
                     background: 'linear-gradient(45deg, #673ab7, #2196f3)',
@@ -1823,30 +1809,20 @@ export default function CommunityManager() {
             </Box>
           </Stack>
         </DialogContent>
-        
+
         {/* Section 5: Bottom Actions */}
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={handleRegenerateClose} variant="outlined" color="secondary">
             Cancel
           </Button>
-          <Button 
-            onClick={handleRegenerateSave} 
-            variant="contained" 
-            color="success"
-            startIcon={<Save />}
-          >
+          <Button onClick={handleRegenerateSave} variant="contained" color="success" startIcon={<Save />}>
             Save
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Add FM Station Modal */}
-      <Dialog
-        open={addStationModalOpen}
-        onClose={handleAddStationClose}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={addStationModalOpen} onClose={handleAddStationClose} maxWidth="md" fullWidth>
         <DialogTitle>
           <Typography variant="h5">Add FM Station</Typography>
         </DialogTitle>
@@ -1883,15 +1859,15 @@ export default function CommunityManager() {
               >
                 {addStationFormData.logoPreview ? (
                   <Box>
-                    <img 
-                      src={addStationFormData.logoPreview} 
-                      alt="Station logo preview" 
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '200px', 
+                    <img
+                      src={addStationFormData.logoPreview}
+                      alt="Station logo preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '200px',
                         borderRadius: '8px',
                         objectFit: 'contain'
-                      }} 
+                      }}
                     />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                       Click or drag to replace logo
@@ -1908,13 +1884,7 @@ export default function CommunityManager() {
                     </Typography>
                   </Stack>
                 )}
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  style={{ display: 'none' }}
-                />
+                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoChange} style={{ display: 'none' }} />
               </Box>
             </Box>
 
@@ -1944,7 +1914,7 @@ export default function CommunityManager() {
                 multiline
                 rows={4}
                 fullWidth
-                placeholder="e.g., https://stream.example.com/station.aac&#10;or&#10;{&#10;  &quot;url&quot;: &quot;https://api.example.com/stream&quot;,&#10;  &quot;apiKey&quot;: &quot;your-api-key&quot;&#10;}"
+                placeholder='e.g., https://stream.example.com/station.aac&#10;or&#10;{&#10;  "url": "https://api.example.com/stream",&#10;  "apiKey": "your-api-key"&#10;}'
                 required
               />
             </Box>
@@ -1953,19 +1923,12 @@ export default function CommunityManager() {
             <Box>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Box>
-                  <Typography variant="h6">
-                    Programme Time Slot
-                  </Typography>
+                  <Typography variant="h6">Programme Time Slot</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Add schedules for automatic recording sessions
                   </Typography>
                 </Box>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={handleAddScheduleRow}
-                  size="small"
-                >
+                <Button variant="contained" startIcon={<Add />} onClick={handleAddScheduleRow} size="small">
                   Add Schedule
                 </Button>
               </Stack>
@@ -2001,33 +1964,17 @@ export default function CommunityManager() {
 
         {/* Section 4: Confirmation */}
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button 
-            onClick={handleAddStationClose} 
-            variant="outlined" 
-            color="secondary"
-            size="large"
-          >
+          <Button onClick={handleAddStationClose} variant="outlined" color="secondary" size="large">
             Cancel
           </Button>
-          <Button 
-            onClick={handleAddStationConfirm} 
-            variant="contained" 
-            color="primary"
-            size="large"
-            startIcon={<Add />}
-          >
+          <Button onClick={handleAddStationConfirm} variant="contained" color="primary" size="large" startIcon={<Add />}>
             Confirm & Add Station
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit FM Station Modal */}
-      <Dialog
-        open={editStationModalOpen}
-        onClose={handleEditStationClose}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={editStationModalOpen} onClose={handleEditStationClose} maxWidth="md" fullWidth>
         <DialogTitle>
           <Typography variant="h5">Edit FM Station</Typography>
         </DialogTitle>
@@ -2064,15 +2011,15 @@ export default function CommunityManager() {
               >
                 {editStationFormData.logoPreview ? (
                   <Box>
-                    <img 
-                      src={editStationFormData.logoPreview} 
-                      alt="Station logo preview" 
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '200px', 
+                    <img
+                      src={editStationFormData.logoPreview}
+                      alt="Station logo preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '200px',
                         borderRadius: '8px',
                         objectFit: 'contain'
-                      }} 
+                      }}
                     />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                       Click or drag to replace logo
@@ -2089,13 +2036,7 @@ export default function CommunityManager() {
                     </Typography>
                   </Stack>
                 )}
-                <input
-                  ref={editLogoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleEditLogoChange}
-                  style={{ display: 'none' }}
-                />
+                <input ref={editLogoInputRef} type="file" accept="image/*" onChange={handleEditLogoChange} style={{ display: 'none' }} />
               </Box>
             </Box>
 
@@ -2125,7 +2066,7 @@ export default function CommunityManager() {
                 multiline
                 rows={4}
                 fullWidth
-                placeholder="e.g., https://stream.example.com/station.aac&#10;or&#10;{&#10;  &quot;url&quot;: &quot;https://api.example.com/stream&quot;,&#10;  &quot;apiKey&quot;: &quot;your-api-key&quot;&#10;}"
+                placeholder='e.g., https://stream.example.com/station.aac&#10;or&#10;{&#10;  "url": "https://api.example.com/stream",&#10;  "apiKey": "your-api-key"&#10;}'
                 required
               />
             </Box>
@@ -2134,19 +2075,12 @@ export default function CommunityManager() {
             <Box>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Box>
-                  <Typography variant="h6">
-                    Programme Time Slot
-                  </Typography>
+                  <Typography variant="h6">Programme Time Slot</Typography>
                   <Typography variant="body2" color="text.secondary">
                     Add schedules for automatic recording sessions
                   </Typography>
                 </Box>
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={handleAddEditScheduleRow}
-                  size="small"
-                >
+                <Button variant="contained" startIcon={<Add />} onClick={handleAddEditScheduleRow} size="small">
                   Add Schedule
                 </Button>
               </Stack>
@@ -2182,21 +2116,10 @@ export default function CommunityManager() {
 
         {/* Section 4: Confirmation */}
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button 
-            onClick={handleEditStationClose} 
-            variant="outlined" 
-            color="secondary"
-            size="large"
-          >
+          <Button onClick={handleEditStationClose} variant="outlined" color="secondary" size="large">
             Cancel
           </Button>
-          <Button 
-            onClick={handleEditStationConfirm} 
-            variant="contained" 
-            color="primary"
-            size="large"
-            startIcon={<Save />}
-          >
+          <Button onClick={handleEditStationConfirm} variant="contained" color="primary" size="large" startIcon={<Save />}>
             Save Changes
           </Button>
         </DialogActions>
