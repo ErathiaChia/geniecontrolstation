@@ -53,7 +53,9 @@ import {
   WhatsApp,
   Telegram,
   Facebook,
-  Instagram
+  Instagram,
+  AutoFixHigh,
+  Save
 } from '@mui/icons-material';
 
 
@@ -195,6 +197,17 @@ export default function CommunityManager() {
     category: '',
     agentResponse: ''
   });
+
+  // Regenerate Modal States
+  const [regenerateModalOpen, setRegenerateModalOpen] = useState(false);
+  const [regeneratingRow, setRegeneratingRow] = useState(null);
+  const [regenerateFormData, setRegenerateFormData] = useState({
+    srt: '',
+    segmentCategory: '',
+    agentResponse: '',
+    prompt: ''
+  });
+
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -448,6 +461,64 @@ export default function CommunityManager() {
     alert(`Sharing to ${platform}! (Integration pending)`);
   };
 
+  // Regenerate Modal Handlers
+  const handleRegenerateClick = (row) => {
+    setRegeneratingRow(row);
+    setRegenerateFormData({
+      srt: row.srt || '',
+      segmentCategory: row.segmentCategory || '',
+      agentResponse: row.agentResponse || '',
+      prompt: ''
+    });
+    setRegenerateModalOpen(true);
+  };
+
+  const handleRegenerateClose = () => {
+    setRegenerateModalOpen(false);
+    setRegeneratingRow(null);
+    setRegenerateFormData({
+      srt: '',
+      segmentCategory: '',
+      agentResponse: '',
+      prompt: ''
+    });
+  };
+
+  const handleRegenerateFormChange = (field, value) => {
+    setRegenerateFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleRegenerateSave = () => {
+    if (!regeneratingRow || !activeStation) return;
+
+    // Update the data in stationData
+    setStationData(prev => ({
+      ...prev,
+      [activeStation.id]: prev[activeStation.id].map(item => 
+        item.id === regeneratingRow.id 
+          ? { 
+              ...item, 
+              srt: regenerateFormData.srt,
+              segmentCategory: regenerateFormData.segmentCategory,
+              agentResponse: regenerateFormData.agentResponse
+            }
+          : item
+      )
+    }));
+
+    handleRegenerateClose();
+  };
+
+  const handleRegenerate = () => {
+    // Placeholder for AI regeneration logic
+    console.log('Regenerating with prompt:', regenerateFormData.prompt);
+    alert('AI Regeneration triggered! (Integration pending)');
+    // In a real implementation, this would call an API to regenerate the content
+  };
+
   // Clip Player Handlers
   const handlePlayClip = (row) => {
     if (!clipAudioRef.current || !row.clipUrl) return;
@@ -615,7 +686,7 @@ export default function CommunityManager() {
                             disabled={isProcessing}
                             sx={{ minWidth: 160, py: 1.5 }}
                             >
-                            {isRecording ? 'Stop Recording' : 'Record'}
+                            {isRecording ? 'Stop Recording' : 'Start Recording'}
                             </Button>
                         </Stack>
                         <Button
@@ -654,13 +725,17 @@ export default function CommunityManager() {
               {/* Filters */}
               <Stack 
                 direction="row" 
-                justifyContent="flex-end" 
+                justifyContent="space-between"
+                alignItems="center" 
                 spacing={1} 
                 sx={{ mb: 2 }}
               >
-                <Button variant="outlined" startIcon={<MoreHoriz />}>Action</Button>
-                <Button variant="outlined" startIcon={<Sort />}>Sort</Button>
-                <Button variant="outlined" startIcon={<FilterList />}>Filter</Button>
+                <Typography variant="h4">{activeStation?.name} - Recorded Segments</Typography>
+                <Stack direction="row" spacing={1}>
+                  <Button variant="outlined" startIcon={<MoreHoriz />}>Action</Button>
+                  <Button variant="outlined" startIcon={<Sort />}>Sort</Button>
+                  <Button variant="outlined" startIcon={<FilterList />}>Filter</Button>
+                </Stack>
               </Stack>
 
               {/* Table */}
@@ -731,11 +806,19 @@ export default function CommunityManager() {
                             <Button 
                               size="small" 
                               variant="contained" 
-                              color="info"
-                              startIcon={<ChatBubbleOutline />}
-                              sx={{ minWidth: 'auto', px: 1 }}
+                              startIcon={<AutoFixHigh />}
+                              onClick={() => handleRegenerateClick(row)}
+                              sx={{ 
+                                minWidth: 'auto', 
+                                px: 1,
+                                background: 'linear-gradient(45deg, #673ab7, #2196f3)',
+                                color: 'white',
+                                '&:hover': {
+                                    background: 'linear-gradient(45deg, #5e35b1, #1e88e5)'
+                                }
+                              }}
                             >
-                              Prompt
+                              Regenerate
                             </Button>
                             <Button 
                               size="small" 
@@ -1057,6 +1140,120 @@ export default function CommunityManager() {
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={handleShareClose} variant="outlined" color="secondary">
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Regenerate Modal */}
+      <Dialog
+        open={regenerateModalOpen}
+        onClose={handleRegenerateClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h5">Regenerate Content</Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            {/* Section 1: SRT Content */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                SRT Content
+              </Typography>
+              <TextField
+                value={regenerateFormData.srt}
+                onChange={(e) => handleRegenerateFormChange('srt', e.target.value)}
+                multiline
+                rows={4}
+                fullWidth
+                placeholder="Enter the transcript or SRT content..."
+              />
+            </Box>
+
+            {/* Section 2: Segment Category */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Segment Category
+              </Typography>
+              <TextField
+                select
+                value={regenerateFormData.segmentCategory}
+                onChange={(e) => handleRegenerateFormChange('segmentCategory', e.target.value)}
+                fullWidth
+              >
+                {segmentCategories.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+
+            {/* Section 3: Agent Response */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Agent Response
+              </Typography>
+              <TextField
+                value={regenerateFormData.agentResponse}
+                onChange={(e) => handleRegenerateFormChange('agentResponse', e.target.value)}
+                multiline
+                rows={4}
+                fullWidth
+                placeholder="Enter the agent's response or social media post..."
+              />
+            </Box>
+
+            {/* Divider */}
+            <Divider />
+
+            {/* Section 4: Prompt Section */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Enhance with AI
+              </Typography>
+              <Stack spacing={2}>
+                <TextField
+                  label="Prompt / Instructions"
+                  value={regenerateFormData.prompt}
+                  onChange={(e) => handleRegenerateFormChange('prompt', e.target.value)}
+                  multiline
+                  rows={4}
+                  fullWidth
+                  placeholder="E.g., Make the tone more professional, summarize in bullet points..."
+                />
+                <Button 
+                  onClick={handleRegenerate}
+                  variant="contained" 
+                  startIcon={<AutoFixHigh />}
+                  sx={{
+                    background: 'linear-gradient(45deg, #673ab7, #2196f3)',
+                    color: 'white',
+                    '&:hover': {
+                      background: 'linear-gradient(45deg, #5e35b1, #1e88e5)'
+                    }
+                  }}
+                >
+                  Regenerate
+                </Button>
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogContent>
+        
+        {/* Section 5: Bottom Actions */}
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleRegenerateClose} variant="outlined" color="secondary">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleRegenerateSave} 
+            variant="contained" 
+            color="success"
+            startIcon={<Save />}
+          >
+            Save
           </Button>
         </DialogActions>
       </Dialog>
