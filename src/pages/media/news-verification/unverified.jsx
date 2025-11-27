@@ -1347,6 +1347,95 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                 )}
               </AccordionDetails>
             </Accordion>
+
+            {/* References */}
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <LinkIcon sx={{ fontSize: '20px', color: 'primary.main', mr: 1 }} />
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    References & Sources
+                  </Typography>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                {factCheckData.references && factCheckData.references.length > 0 ? (
+                  <Stack spacing={2}>
+                    {factCheckData.references.map((ref, index) => (
+                      <Paper
+                        key={ref.url || index}
+                        sx={{
+                          p: 2,
+                          border: 1,
+                          borderColor: (ref.confidence || '').toLowerCase() === 'high' ? 'success.light' : 'divider',
+                          bgcolor: (ref.confidence || '').toLowerCase() === 'high' ? 'success.lighter' : 'background.paper',
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            boxShadow: 2
+                          },
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <Box sx={{ mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                          <Typography variant="subtitle2" fontWeight={600} sx={{ lineHeight: 1.3 }}>
+                            <Link
+                              href={ref.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              color="inherit"
+                              underline="hover"
+                              sx={{ '&:hover': { color: 'primary.main' } }}
+                            >
+                              {ref.title || ref.url}
+                            </Link>
+                          </Typography>
+                          <Chip
+                            label={ref.confidence?.toUpperCase() || 'UNKNOWN'}
+                            size="small"
+                            color={
+                              (ref.confidence || '').toLowerCase() === 'high'
+                                ? 'success'
+                                : (ref.confidence || '').toLowerCase() === 'medium'
+                                  ? 'warning'
+                                  : 'default'
+                            }
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: '0.625rem', fontWeight: 600 }}
+                          />
+                        </Box>
+
+                        {ref.reason && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              display: 'block',
+                              mb: 1,
+                              color: 'text.primary',
+                              fontWeight: 500,
+                              bgcolor: (ref.confidence || '').toLowerCase() === 'high' ? 'background.paper' : 'grey.100',
+                              p: 0.5,
+                              borderRadius: 0.5
+                            }}
+                          >
+                            {ref.reason}
+                          </Typography>
+                        )}
+
+                        {ref.snippet && (
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem', fontStyle: 'italic' }}>
+                            "{ref.snippet}"
+                          </Typography>
+                        )}
+                      </Paper>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Alert severity="info" sx={{ py: 0.5 }}>
+                    <Typography variant="body2">No external references found.</Typography>
+                  </Alert>
+                )}
+              </AccordionDetails>
+            </Accordion>
           </Stack>
         ) : (
           <Alert severity="info">
