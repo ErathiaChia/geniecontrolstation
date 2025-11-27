@@ -74,8 +74,82 @@ import MainCard from 'components/MainCard';
 // Sample data - filtered for Unverified status
 const unverifiedNewsLeads = [
   {
+    id: 0,
+    title: 'IRS Announces New Direct Deposit Relief Payments - $1,200 Stimulus Checks Coming This Week',
+    submissionDate: '2025-11-26',
+    currentStatus: 'Unverified',
+    statusColor: 'error',
+    sources: 'Blog News',
+    assignedTo: 'John Doe',
+    submitter: {
+      fullName: 'James Anderson',
+      ic: 'S9876543B',
+      address: '456 Orchard Road, #15-32, Singapore 238877',
+      phone: '+65 9876 5432',
+      email: 'james.anderson@email.com'
+    },
+    storyDetails: {
+      title: 'IRS Announces New Direct Deposit Relief Payments - $1,200 Stimulus Checks Coming This Week',
+      description:
+        'The Internal Revenue Service (IRS) has reportedly announced a new round of direct deposit relief payments, with eligible Americans set to receive $1,200 stimulus checks starting this week. According to viral social media posts, the payments are part of a new economic relief program approved by Congress. The posts claim that individuals who filed taxes in 2024 and have direct deposit information on file with the IRS will automatically receive the payment. However, official IRS sources have not confirmed this announcement, and the claims appear to be circulating primarily through unofficial websites and social media platforms.',
+      category: 'Finance',
+      urgency: 'High',
+      estimatedImpact: 'Major'
+    },
+    attachments: [
+      {
+        id: 1,
+        type: 'image',
+        name: 'confresa-irs-article-screenshot.jpg',
+        url: 'https://picsum.photos/800/600?random=1',
+        description: 'Screenshot of confresa.org article claiming IRS announced $1,390 direct deposit payment'
+      },
+      {
+        id: 2,
+        type: 'image',
+        name: 'thurj-irs-payment-screenshot.jpg',
+        url: 'https://picsum.photos/800/600?random=2',
+        description: 'Screenshot from thurj.org article about IRS $1,390 direct deposit relief payment'
+      },
+      {
+        id: 3,
+        type: 'image',
+        name: 'nctpc-eligibility-screenshot.jpg',
+        url: 'https://picsum.photos/800/600?random=3',
+        description: 'Screenshot from nctpc.org article showing alleged IRS eligibility information'
+      }
+    ],
+    links: [
+      {
+        id: 1,
+        url: 'https://www.confresa.org/irs-announces-1390-direct-deposit/',
+        description: 'Confresa.org article: "IRS Announces $1,390 Direct Deposit Relief Payment for November 2025"',
+        verified: false
+      },
+      {
+        id: 2,
+        url: 'https://www.thurj.org/irs-to-release-1390-direct-deposit-relief/',
+        description: 'Thurj.org article: "IRS to Release $1,390 Direct Deposit Relief Payment in November 2025"',
+        verified: false
+      },
+      {
+        id: 3,
+        url: 'https://www.nctpc.org/irs-1390-relief-deposit-november-2025/',
+        description: 'NCTPC.org article: "IRS Announces $1,390 Direct Deposit Relief Payment For November 2025, Check Eligibility"',
+        verified: false
+      },
+      {
+        id: 4,
+        url: 'https://startupnews.fyi/2025/11/12/irs-direct-deposit-relief-payments-2025-what-to-know-about-the-latest-stimulus-rumors/',
+        description: 'StartupNews.fyi article discussing the circulating IRS relief payment rumors',
+        verified: false
+      }
+    ],
+    editorialNotes: []
+  },
+  {
     id: 1,
-    title: 'Breaking: Major Tech Company Announces New Product',
+    title: 'Breaking news: Singapore birthrate in 2024 exceeds 2.0',
     submissionDate: '2024-11-25',
     currentStatus: 'Unverified',
     statusColor: 'error',
@@ -90,9 +164,10 @@ const unverifiedNewsLeads = [
       email: 'sarah.johnson@email.com'
     },
     storyDetails: {
-      title: 'Breaking: Major Tech Company Announces New Product',
-      description: 'A major technology company has announced a revolutionary new product that promises to change the industry. The announcement was made during their annual conference and has generated significant buzz on social media platforms. Industry experts are calling it a game-changer that could disrupt the current market landscape.',
-      category: 'Technology',
+      title: 'Breaking news: Singapore birthrate in 2024 exceeds 2.0',
+      description:
+        "In a surprising demographic shift, Singapore's total fertility rate for 2024 has reportedly surged past 2.0 - a milestone not seen in decades. Early figures suggest a sharp rise in births across multiple age groups, with analysts attributing the trend to enhanced family-support policies and improved economic confidence. Officials say the unexpected spike could reshape long-term population planning, though full verification of the data is still pending.",
+      category: 'Demographics',
       urgency: 'High',
       estimatedImpact: 'Major'
     },
@@ -100,36 +175,36 @@ const unverifiedNewsLeads = [
       {
         id: 1,
         type: 'image',
-        name: 'product-announcement.jpg',
+        name: 'birthrate-statistics.jpg',
         url: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800',
-        description: 'Official product announcement photo'
+        description: 'Demographic statistics chart'
       },
       {
         id: 2,
         type: 'image',
-        name: 'conference-photo.jpg',
+        name: 'family-policy-announcement.jpg',
         url: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
-        description: 'Conference venue photo'
+        description: 'Government family support policy announcement'
       }
     ],
     links: [
       {
         id: 1,
-        url: 'https://twitter.com/techcompany/status/123456',
-        description: 'Official Twitter announcement',
-        verified: true
+        url: 'https://x.com/user123/status/123456',
+        description: 'X (Twitter) post about birthrate statistics',
+        verified: false
       },
       {
         id: 2,
-        url: 'https://www.techblog.com/article/new-product',
-        description: 'Tech blog coverage',
+        url: 'https://www.facebook.com/user456/posts/789012',
+        description: 'Facebook post discussing birthrate trends',
         verified: false
       },
       {
         id: 3,
-        url: 'https://youtube.com/watch?v=abc123',
-        description: 'Product demo video',
-        verified: true
+        url: 'https://www.tiktok.com/@user789/video/345678',
+        description: 'TikTok video about Singapore birthrate',
+        verified: false
       }
     ],
     editorialNotes: []
@@ -151,7 +226,8 @@ const unverifiedNewsLeads = [
     },
     storyDetails: {
       title: 'Weather Alert: Storm Warning Issued',
-      description: 'Meteorological authorities have issued a severe storm warning for the coastal regions. Heavy rainfall and strong winds are expected over the next 48 hours. Residents are advised to take necessary precautions and stay indoors during the storm.',
+      description:
+        'Meteorological authorities have issued a severe storm warning for the coastal regions. Heavy rainfall and strong winds are expected over the next 48 hours. Residents are advised to take necessary precautions and stay indoors during the storm.',
       category: 'Weather',
       urgency: 'Critical',
       estimatedImpact: 'High'
@@ -174,7 +250,7 @@ const unverifiedNewsLeads = [
       }
     ],
     editorialNotes: []
-  },
+  }
 ];
 
 // News Verification Steps
@@ -253,7 +329,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
   const anchorRef = useRef(null);
   const [requestInfoModalOpen, setRequestInfoModalOpen] = useState(false);
   const [requestInfoMessage, setRequestInfoMessage] = useState('');
-  
+
   // Editable story details state
   const [editedStoryDetails, setEditedStoryDetails] = useState({
     title: newsLead.storyDetails.title,
@@ -262,6 +338,19 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
     urgency: newsLead.storyDetails.urgency,
     estimatedImpact: newsLead.storyDetails.estimatedImpact
   });
+
+  // Sync editedStoryDetails when newsLead changes (only when not editing)
+  useEffect(() => {
+    if (!isEditing) {
+      setEditedStoryDetails({
+        title: newsLead.storyDetails.title,
+        description: newsLead.storyDetails.description,
+        category: newsLead.storyDetails.category,
+        urgency: newsLead.storyDetails.urgency,
+        estimatedImpact: newsLead.storyDetails.estimatedImpact
+      });
+    }
+  }, [newsLead, isEditing]);
 
   const sections = [
     { id: 0, name: 'Personal Details', icon: <PersonIcon /> },
@@ -280,7 +369,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
     const credibilityLevel = aiNewsworthyChecks.credibility.status === 'success' ? 'High' : 'Moderate';
     const accuracyStatus = aiNewsworthyChecks.accuracy.status === 'success' ? 'Passed' : 'Needs review';
     const accuracyScore = aiNewsworthyChecks.accuracy.status === 'success' ? '92/100' : '75/100';
-    
+
     return `Junior Editorial Review - ${new Date().toLocaleDateString()}
 
 SOURCES VERIFICATION
@@ -314,11 +403,11 @@ Local Relevance: ${aiNewsworthyChecks.relevance.factors[1].value >= 8 ? 'Very Hi
 CONTENT INTEGRITY CHECK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Total Attachments: ${newsLead.attachments?.length || 0}
-Images Verified: ${newsLead.attachments?.filter(a => a.type === 'image').length || 0}/${newsLead.attachments?.filter(a => a.type === 'image').length || 0} (All authentic, properly sourced)
-Videos Verified: ${newsLead.attachments?.filter(a => a.type === 'video').length || 0 > 0 ? `${newsLead.attachments?.filter(a => a.type === 'video').length}/` + newsLead.attachments?.filter(a => a.type === 'video').length : 'N/A'}
-Documents Verified: ${newsLead.attachments?.filter(a => a.type === 'document').length || 0 > 0 ? `${newsLead.attachments?.filter(a => a.type === 'document').length}/` + newsLead.attachments?.filter(a => a.type === 'document').length : 'N/A'}
+Images Verified: ${newsLead.attachments?.filter((a) => a.type === 'image').length || 0}/${newsLead.attachments?.filter((a) => a.type === 'image').length || 0} (All authentic, properly sourced)
+Videos Verified: ${newsLead.attachments?.filter((a) => a.type === 'video').length || 0 > 0 ? `${newsLead.attachments?.filter((a) => a.type === 'video').length}/` + newsLead.attachments?.filter((a) => a.type === 'video').length : 'N/A'}
+Documents Verified: ${newsLead.attachments?.filter((a) => a.type === 'document').length || 0 > 0 ? `${newsLead.attachments?.filter((a) => a.type === 'document').length}/` + newsLead.attachments?.filter((a) => a.type === 'document').length : 'N/A'}
 Links Provided: ${newsLead.links?.length || 0}
-Links Verified: ${newsLead.links?.filter(l => l.verified).length || 0}/${newsLead.links?.length || 0} (${newsLead.links?.filter(l => l.verified).length === newsLead.links?.length ? 'All functional and relevant' : 'Some pending verification'})
+Links Verified: ${newsLead.links?.filter((l) => l.verified).length || 0}/${newsLead.links?.length || 0} (${newsLead.links?.filter((l) => l.verified).length === newsLead.links?.length ? 'All functional and relevant' : 'Some pending verification'})
 Copyright Status: All media cleared for use
 Attribution: Properly attributed
 
@@ -374,7 +463,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
   const generateAIRequestMessage = () => {
     // AI-generated message based on missing or unclear information
     const missingItems = [];
-    
+
     // Check for missing or incomplete information
     if (!newsLead.attachments || newsLead.attachments.length === 0) {
       missingItems.push('supporting documents or images');
@@ -388,10 +477,10 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
     if (aiNewsworthyChecks.integrity.status === 'warning') {
       missingItems.push('clarification on factual accuracy and timeline');
     }
-    
+
     const greeting = `Dear ${newsLead.submitter?.fullName || 'Submitter'},\n\n`;
     const intro = `Thank you for submitting your news lead "${newsLead.storyDetails?.title || 'your news lead'}" to our editorial team.\n\n`;
-    
+
     let body = '';
     if (missingItems.length > 0) {
       body = `After reviewing your submission, we would like to request additional information to help us verify and process your news lead:\n\n`;
@@ -402,9 +491,9 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
     } else {
       body = `After reviewing your submission, we would like to request some additional information to help us verify and process your news lead more effectively.\n\n`;
     }
-    
+
     const closing = `Please provide the requested information at your earliest convenience. You can reply to this email or contact us directly.\n\nThank you for your cooperation.\n\nBest regards,\nEditorial Team`;
-    
+
     return greeting + intro + body + closing;
   };
 
@@ -467,9 +556,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                     Address
                   </Box>
                 </Typography>
-                <Typography variant="body1">
-                  {newsLead.submitter.address}
-                </Typography>
+                <Typography variant="body1">{newsLead.submitter.address}</Typography>
               </Box>
               <Divider />
               <Box>
@@ -479,9 +566,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                     Phone Number
                   </Box>
                 </Typography>
-                <Typography variant="body1">
-                  {newsLead.submitter.phone}
-                </Typography>
+                <Typography variant="body1">{newsLead.submitter.phone}</Typography>
               </Box>
               <Divider />
               <Box>
@@ -491,9 +576,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                     Email Address
                   </Box>
                 </Typography>
-                <Typography variant="body1">
-                  {newsLead.submitter.email}
-                </Typography>
+                <Typography variant="body1">{newsLead.submitter.email}</Typography>
               </Box>
             </Stack>
           </Box>
@@ -556,12 +639,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                     size="small"
                   />
                 ) : (
-                  <Chip 
-                    label={editedStoryDetails.category} 
-                    color="primary" 
-                    size="small"
-                    sx={{ mt: 0.5 }}
-                  />
+                  <Chip label={editedStoryDetails.category} color="primary" size="small" sx={{ mt: 0.5 }} />
                 )}
               </Box>
               <Divider />
@@ -578,7 +656,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                     variant="outlined"
                     size="small"
                     SelectProps={{
-                      native: true,
+                      native: true
                     }}
                   >
                     <option value="Low">Low</option>
@@ -587,8 +665,8 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                     <option value="Critical">Critical</option>
                   </TextField>
                 ) : (
-                  <Chip 
-                    label={editedStoryDetails.urgency} 
+                  <Chip
+                    label={editedStoryDetails.urgency}
                     color={editedStoryDetails.urgency === 'Critical' ? 'error' : 'warning'}
                     size="small"
                     sx={{ mt: 0.5 }}
@@ -609,7 +687,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                     variant="outlined"
                     size="small"
                     SelectProps={{
-                      native: true,
+                      native: true
                     }}
                   >
                     <option value="Minor">Minor</option>
@@ -618,9 +696,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                     <option value="Major">Major</option>
                   </TextField>
                 ) : (
-                  <Typography variant="body1">
-                    {editedStoryDetails.estimatedImpact}
-                  </Typography>
+                  <Typography variant="body1">{editedStoryDetails.estimatedImpact}</Typography>
                 )}
               </Box>
             </Stack>
@@ -636,10 +712,10 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             <Grid container spacing={2}>
               {newsLead.attachments?.map((attachment) => (
                 <Grid item xs={12} sm={6} key={attachment.id}>
-                  <Paper 
-                    sx={{ 
-                      p: 2, 
-                      border: 1, 
+                  <Paper
+                    sx={{
+                      p: 2,
+                      border: 1,
                       borderColor: 'divider',
                       '&:hover': {
                         boxShadow: 3,
@@ -681,9 +757,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
               ))}
             </Grid>
             {(!newsLead.attachments || newsLead.attachments.length === 0) && (
-              <Alert severity="info">
-                No attachments provided for this news lead.
-              </Alert>
+              <Alert severity="info">No attachments provided for this news lead.</Alert>
             )}
           </Box>
         );
@@ -696,11 +770,11 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             </Typography>
             <Stack spacing={2}>
               {newsLead.links?.map((link) => (
-                <Paper 
+                <Paper
                   key={link.id}
-                  sx={{ 
-                    p: 2, 
-                    border: 1, 
+                  sx={{
+                    p: 2,
+                    border: 1,
                     borderColor: link.verified ? 'success.main' : 'divider',
                     bgcolor: link.verified ? 'success.lighter' : 'background.paper'
                   }}
@@ -714,19 +788,14 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                         </Typography>
                       </Box>
                       {link.verified && (
-                        <Chip 
-                          label="Verified" 
-                          size="small" 
-                          color="success" 
-                          icon={<CheckCircle style={{ fontSize: '16px' }} />}
-                        />
+                        <Chip label="Verified" size="small" color="success" icon={<CheckCircle style={{ fontSize: '16px' }} />} />
                       )}
                     </Box>
-                    <Link 
-                      href={link.url} 
-                      target="_blank" 
+                    <Link
+                      href={link.url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ 
+                      sx={{
                         fontSize: '0.875rem',
                         wordBreak: 'break-all',
                         color: 'primary.main'
@@ -747,9 +816,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
               ))}
             </Stack>
             {(!newsLead.links || newsLead.links.length === 0) && (
-              <Alert severity="info">
-                No reference links provided for this news lead.
-              </Alert>
+              <Alert severity="info">No reference links provided for this news lead.</Alert>
             )}
           </Box>
         );
@@ -760,24 +827,24 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
               Editorial Conversation Thread
             </Typography>
-            
+
             {newsLead.editorialNotes && newsLead.editorialNotes.length > 0 ? (
               <Stack spacing={2}>
                 {newsLead.editorialNotes.map((note, index) => (
-                  <Paper 
+                  <Paper
                     key={index}
-                    sx={{ 
-                      p: 2, 
-                      border: 1, 
+                    sx={{
+                      p: 2,
+                      border: 1,
                       borderColor: 'divider',
                       bgcolor: note.role === 'Junior Editorial' ? 'primary.lighter' : 'warning.lighter'
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Avatar 
-                        sx={{ 
-                          width: 32, 
-                          height: 32, 
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
                           bgcolor: note.role === 'Junior Editorial' ? 'primary.main' : 'warning.main',
                           fontSize: '0.875rem'
                         }}
@@ -792,14 +859,10 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                           {note.timestamp}
                         </Typography>
                       </Box>
-                      <Chip 
+                      <Chip
                         label={note.action}
                         size="small"
-                        color={
-                          note.action === 'Approved' ? 'success' : 
-                          note.action === 'Rejected' ? 'error' : 
-                          'warning'
-                        }
+                        color={note.action === 'Approved' ? 'success' : note.action === 'Rejected' ? 'error' : 'warning'}
                       />
                     </Box>
                     <Divider sx={{ my: 1 }} />
@@ -826,36 +889,33 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
     <>
       {/* Header Section */}
       <Box sx={{ mt: 0, mb: 3 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          px: { xs: 2, sm: 3 }, 
-          py: 2, 
-          bgcolor: 'background.paper', 
-          borderBottom: 1, 
-          borderColor: 'divider' 
-        }}>
-          <Button
-            startIcon={<ArrowBack />}
-            onClick={handleBack}
-          >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: { xs: 2, sm: 3 },
+            py: 2,
+            bgcolor: 'background.paper',
+            borderBottom: 1,
+            borderColor: 'divider'
+          }}
+        >
+          <Button startIcon={<ArrowBack />} onClick={handleBack}>
             Back to News Verification
           </Button>
           <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
             <Typography variant="h5">
-              News Lead #{newsId ? `NL-2024-${newsId.toString().padStart(4, '0')}` : 'NL-2024-0000'}
+              {newsLead.storyDetails?.title ||
+                newsLead.title ||
+                (newsId ? `News Lead #NL-2024-${newsId.toString().padStart(4, '0')}` : 'News Lead #NL-2024-0000')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Review and verify news submission
             </Typography>
           </Box>
           <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button">
-            <Button
-              color="primary"
-              endIcon={<ArrowForward />}
-              onClick={handleProceed}
-            >
+            <Button color="primary" endIcon={<ArrowForward />} onClick={handleProceed}>
               Proceed
             </Button>
             <Button
@@ -884,8 +944,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
               <Grow
                 {...TransitionProps}
                 style={{
-                  transformOrigin:
-                    placement === 'bottom' ? 'center top' : 'center bottom'
+                  transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom'
                 }}
               >
                 <Paper>
@@ -918,11 +977,11 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             )}
           </Popper>
         </Box>
-        
+
         {/* Stepper */}
         <Box sx={{ px: { xs: 2, sm: 3 }, py: 2, bgcolor: 'background.paper' }}>
-          <Stepper 
-            activeStep={activeStep} 
+          <Stepper
+            activeStep={activeStep}
             alternativeLabel
             sx={{
               '& .MuiStepConnector-root': {
@@ -942,11 +1001,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: index === activeStep 
-                          ? 'primary.main' 
-                          : index < activeStep 
-                          ? 'success.main' 
-                          : 'grey.300',
+                        backgroundColor: index === activeStep ? 'primary.main' : index < activeStep ? 'success.main' : 'grey.300',
                         color: index <= activeStep ? 'white' : 'grey.600',
                         transition: 'all 0.3s ease'
                       }}
@@ -995,18 +1050,17 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                   onClick={() => setSelectedSection(section.id)}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ 
-                      fontSize: '20px', 
-                      color: selectedSection === section.id ? 'primary.main' : 'text.secondary',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}>
+                    <Box
+                      sx={{
+                        fontSize: '20px',
+                        color: selectedSection === section.id ? 'primary.main' : 'text.secondary',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
                       {section.icon}
                     </Box>
-                    <Typography 
-                      variant="subtitle1" 
-                      fontWeight={selectedSection === section.id ? 600 : 400}
-                    >
+                    <Typography variant="subtitle1" fontWeight={selectedSection === section.id ? 600 : 400}>
                       {section.name}
                     </Typography>
                   </Box>
@@ -1018,16 +1072,12 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
 
         {/* Right Section: Content Display (2/3) */}
         <Grid item xs={8} sx={{ maxWidth: '66.667%', flexBasis: '66.667%' }}>
-          <MainCard 
+          <MainCard
             title={
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h5">{sections[selectedSection].name}</Typography>
                 {selectedSection === 1 && (
-                  <IconButton 
-                    size="small" 
-                    color={isEditing ? 'primary' : 'default'}
-                    onClick={() => setIsEditing(!isEditing)}
-                  >
+                  <IconButton size="small" color={isEditing ? 'primary' : 'default'} onClick={() => setIsEditing(!isEditing)}>
                     <Edit />
                   </IconButton>
                 )}
@@ -1035,9 +1085,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             }
             sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
           >
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
-              {renderSectionContent()}
-            </Box>
+            <Box sx={{ flex: 1, overflow: 'auto' }}>{renderSectionContent()}</Box>
           </MainCard>
         </Grid>
       </Grid>
@@ -1064,11 +1112,10 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             zIndex: 1000
           }}
         >
-          <MuiBadge 
+          <MuiBadge
             badgeContent={
-              aiNewsworthyChecks.credibility.status === 'warning' || 
-              aiNewsworthyChecks.integrity.status === 'warning' ? '!' : 0
-            } 
+              aiNewsworthyChecks.credibility.status === 'warning' || aiNewsworthyChecks.integrity.status === 'warning' ? '!' : 0
+            }
             color="error"
           >
             <AutoAwesome />
@@ -1090,12 +1137,14 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
       >
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesome sx={{ 
-              fontSize: '28px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #2196f3 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }} />
+            <AutoAwesome
+              sx={{
+                fontSize: '28px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #2196f3 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            />
             <Typography variant="h4">AI Newsworthy Insights</Typography>
           </Box>
           <IconButton onClick={() => setAiDrawerOpen(false)} size="small">
@@ -1106,7 +1155,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
         <Divider sx={{ mb: 2 }} />
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Button 
+          <Button
             variant="contained"
             size="small"
             startIcon={<AutoAwesome />}
@@ -1147,10 +1196,8 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
               <List dense>
                 {aiNewsworthyChecks.credibility.items.map((item, index) => (
                   <ListItem key={index} disablePadding sx={{ mb: 1.5 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      {getCheckStatusIcon(item.status)}
-                    </ListItemIcon>
-                    <ListItemText 
+                    <ListItemIcon sx={{ minWidth: 32 }}>{getCheckStatusIcon(item.status)}</ListItemIcon>
+                    <ListItemText
                       primary={item.label}
                       secondary={item.message}
                       primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
@@ -1175,15 +1222,8 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             <AccordionDetails>
               <Stack spacing={1.5}>
                 {aiNewsworthyChecks.accuracy.verified.map((item, index) => (
-                  <Alert 
-                    key={index}
-                    severity="success"
-                    icon={<CheckCircle />}
-                    sx={{ py: 0.5 }}
-                  >
-                    <Typography variant="body2">
-                      {item.text}
-                    </Typography>
+                  <Alert key={index} severity="success" icon={<CheckCircle />} sx={{ py: 0.5 }}>
+                    <Typography variant="body2">{item.text}</Typography>
                   </Alert>
                 ))}
               </Stack>
@@ -1235,23 +1275,14 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
               {aiNewsworthyChecks.integrity.flags.length > 0 ? (
                 <Stack spacing={1.5}>
                   {aiNewsworthyChecks.integrity.flags.map((flag, index) => (
-                    <Alert 
-                      key={index}
-                      severity={flag.type}
-                      icon={<Warning />}
-                      sx={{ py: 0.5 }}
-                    >
-                      <Typography variant="body2">
-                        {flag.text}
-                      </Typography>
+                    <Alert key={index} severity={flag.type} icon={<Warning />} sx={{ py: 0.5 }}>
+                      <Typography variant="body2">{flag.text}</Typography>
                     </Alert>
                   ))}
                 </Stack>
               ) : (
                 <Alert severity="success" sx={{ py: 0.5 }}>
-                  <Typography variant="body2">
-                    No integrity issues detected.
-                  </Typography>
+                  <Typography variant="body2">No integrity issues detected.</Typography>
                 </Alert>
               )}
             </AccordionDetails>
@@ -1260,12 +1291,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
       </Drawer>
 
       {/* Editorial Notes Modal */}
-      <Dialog 
-        open={notesModalOpen} 
-        onClose={() => setNotesModalOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={notesModalOpen} onClose={() => setNotesModalOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Notes color="primary" />
@@ -1294,13 +1320,10 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button 
-            onClick={() => setNotesModalOpen(false)}
-            color="inherit"
-          >
+          <Button onClick={() => setNotesModalOpen(false)} color="inherit">
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={() => {
               const aiSuggestion = generateAISuggestedNote();
               setEditorialNote(aiSuggestion);
@@ -1318,25 +1341,14 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
           >
             Regenerate AI Notes
           </Button>
-          <Button 
-            onClick={handleConfirmProceed}
-            variant="contained"
-            color="primary"
-            endIcon={<Send />}
-            disabled={!editorialNote.trim()}
-          >
+          <Button onClick={handleConfirmProceed} variant="contained" color="primary" endIcon={<Send />} disabled={!editorialNote.trim()}>
             Confirm & Proceed to Approval
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Request More Information Modal */}
-      <Dialog 
-        open={requestInfoModalOpen} 
-        onClose={() => setRequestInfoModalOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={requestInfoModalOpen} onClose={() => setRequestInfoModalOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Email color="warning" />
@@ -1356,7 +1368,8 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                 To: {newsLead.submitter?.email || 'N/A'}
               </Typography>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Subject: Additional Information Required - News Lead #{newsId ? `NL-2024-${newsId.toString().padStart(4, '0')}` : 'NL-2024-0000'}
+                Subject: Additional Information Required - News Lead #
+                {newsId ? `NL-2024-${newsId.toString().padStart(4, '0')}` : 'NL-2024-0000'}
               </Typography>
             </Box>
             <TextField
@@ -1373,13 +1386,10 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button 
-            onClick={() => setRequestInfoModalOpen(false)}
-            color="inherit"
-          >
+          <Button onClick={() => setRequestInfoModalOpen(false)} color="inherit">
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={() => {
               const aiMessage = generateAIRequestMessage();
               setRequestInfoMessage(aiMessage);
@@ -1397,7 +1407,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
           >
             Regenerate AI Message
           </Button>
-          <Button 
+          <Button
             onClick={handleSendRequestInfo}
             variant="contained"
             color="warning"
@@ -1427,20 +1437,14 @@ export default function UnverifiedNewsLeads() {
 
   // If newsId is provided, show detail view
   if (newsId) {
-    const newsLead = unverifiedNewsLeads.find(n => n.id === parseInt(newsId));
-    
+    const newsLead = unverifiedNewsLeads.find((n) => n.id === parseInt(newsId));
+
     if (!newsLead) {
       return (
         <Box>
           <MainCard title="News Lead Not Found">
-            <Typography variant="body1">
-              The requested news lead could not be found.
-            </Typography>
-            <Button 
-              variant="outlined" 
-              onClick={() => navigate('/media/news-verification')}
-              sx={{ mt: 2 }}
-            >
+            <Typography variant="body1">The requested news lead could not be found.</Typography>
+            <Button variant="outlined" onClick={() => navigate('/media/news-verification')} sx={{ mt: 2 }}>
               Back to News Verification
             </Button>
           </MainCard>
@@ -1454,4 +1458,3 @@ export default function UnverifiedNewsLeads() {
   // Return null while redirecting
   return null;
 }
-
