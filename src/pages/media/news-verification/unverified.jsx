@@ -11,10 +11,6 @@ import {
   Grid,
   Stack,
   Divider,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -39,7 +35,8 @@ import {
   Grow,
   Popper,
   MenuItem,
-  MenuList
+  MenuList,
+  CircularProgress
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -70,6 +67,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 // project imports
 import MainCard from 'components/MainCard';
+import { useNewsFactCheck } from 'hooks/queries/useNewsFactCheck';
 
 // Sample data - filtered for Unverified status
 const unverifiedNewsLeads = [
@@ -330,6 +328,35 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
   const [requestInfoModalOpen, setRequestInfoModalOpen] = useState(false);
   const [requestInfoMessage, setRequestInfoMessage] = useState('');
 
+  const {
+    data: factCheckData,
+    isLoading: isLoadingFactCheck,
+    isError: isErrorFactCheck,
+    error: factCheckError,
+    refetch: refetchFactCheck,
+    isFetching: isFetchingFactCheck
+  } = useNewsFactCheck(newsLead.storyDetails?.title, newsLead.storyDetails?.description);
+
+  useEffect(() => {
+    console.log('Fact check query status:', {
+      isLoading: isLoadingFactCheck,
+      isFetching: isFetchingFactCheck,
+      isError: isErrorFactCheck,
+      hasData: !!factCheckData,
+      error: factCheckError,
+      title: newsLead.storyDetails?.title,
+      description: newsLead.storyDetails?.description
+    });
+  }, [
+    isLoadingFactCheck,
+    isFetchingFactCheck,
+    isErrorFactCheck,
+    factCheckData,
+    factCheckError,
+    newsLead.storyDetails?.title,
+    newsLead.storyDetails?.description
+  ]);
+
   // Editable story details state
   const [editedStoryDetails, setEditedStoryDetails] = useState({
     title: newsLead.storyDetails.title,
@@ -430,8 +457,8 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
 
   const handleProceed = () => {
     // Open modal for Junior Editorial to add notes
-    const aiSuggestion = generateAISuggestedNote();
-    setEditorialNote(aiSuggestion);
+    const noteContent = factCheckData?.report ?? generateAISuggestedNote();
+    setEditorialNote(noteContent);
     setNotesModalOpen(true);
   };
 
@@ -519,10 +546,20 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
         return <Warning sx={{ fontSize: '20px', color: 'warning.main', mr: 1 }} />;
       case 'success':
       case 'verified':
+      case 'ok':
         return <CheckCircle sx={{ fontSize: '20px', color: 'success.main', mr: 1 }} />;
       default:
         return null;
     }
+  };
+
+  const getOverallStatus = (items) => {
+    if (!items || items.length === 0) return 'success';
+    const hasError = items.some((item) => item.status === 'error');
+    const hasWarning = items.some((item) => item.status === 'warning');
+    if (hasError) return 'error';
+    if (hasWarning) return 'warning';
+    return 'success';
   };
 
   const renderSectionContent = () => {
@@ -1114,7 +1151,14 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
         >
           <MuiBadge
             badgeContent={
-              aiNewsworthyChecks.credibility.status === 'warning' || aiNewsworthyChecks.integrity.status === 'warning' ? '!' : 0
+              factCheckData
+                ? getOverallStatus(factCheckData.factualAccuracy?.items) === 'error' ||
+                  getOverallStatus(factCheckData.contentIntegrity?.items) === 'error' ||
+                  getOverallStatus(factCheckData.factualAccuracy?.items) === 'warning' ||
+                  getOverallStatus(factCheckData.contentIntegrity?.items) === 'warning'
+                  ? '!'
+                  : 0
+                : 0
             }
             color="error"
           >
@@ -1158,8 +1202,9 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
           <Button
             variant="contained"
             size="small"
-            startIcon={<AutoAwesome />}
-            onClick={() => console.log('Regenerate AI insights')}
+            startIcon={isLoadingFactCheck ? <CircularProgress size={16} color="inherit" /> : <AutoAwesome />}
+            onClick={() => refetchFactCheck()}
+            disabled={isLoadingFactCheck}
             sx={{
               minWidth: 'auto',
               px: 1.5,
@@ -1181,113 +1226,133 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
           </Button>
         </Box>
 
-        <Stack spacing={2}>
-          {/* Credibility Check */}
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                {getCheckStatusIcon(aiNewsworthyChecks.credibility.status)}
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Source Credibility
-                </Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <List dense>
-                {aiNewsworthyChecks.credibility.items.map((item, index) => (
-                  <ListItem key={index} disablePadding sx={{ mb: 1.5 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>{getCheckStatusIcon(item.status)}</ListItemIcon>
-                    <ListItemText
-                      primary={item.label}
-                      secondary={item.message}
-                      primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                      secondaryTypographyProps={{ variant: 'caption' }}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Accuracy Check */}
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                {getCheckStatusIcon(aiNewsworthyChecks.accuracy.status)}
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Factual Accuracy
-                </Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Stack spacing={1.5}>
-                {aiNewsworthyChecks.accuracy.verified.map((item, index) => (
-                  <Alert key={index} severity="success" icon={<CheckCircle />} sx={{ py: 0.5 }}>
-                    <Typography variant="body2">{item.text}</Typography>
+        {isLoadingFactCheck ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+            <CircularProgress />
+          </Box>
+        ) : isErrorFactCheck ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="body2" fontWeight={600} gutterBottom>
+              Error loading fact-check data
+            </Typography>
+            <Typography variant="caption">{factCheckError?.message || 'Failed to fetch AI insights'}</Typography>
+          </Alert>
+        ) : factCheckData ? (
+          <Stack spacing={2}>
+            {/* Factual Accuracy */}
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  {getCheckStatusIcon(getOverallStatus(factCheckData.factualAccuracy?.items))}
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    Factual Accuracy
+                  </Typography>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                {factCheckData.factualAccuracy?.items && factCheckData.factualAccuracy.items.length > 0 ? (
+                  <Stack spacing={1.5}>
+                    {factCheckData.factualAccuracy.items.map((item, index) => {
+                      const severity = item.status === 'ok' ? 'success' : item.status === 'warning' ? 'warning' : 'error';
+                      return (
+                        <Alert key={index} severity={severity} icon={getCheckStatusIcon(item.status)} sx={{ py: 0.5 }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            {item.key}
+                          </Typography>
+                          <Typography variant="caption">{item.message}</Typography>
+                        </Alert>
+                      );
+                    })}
+                  </Stack>
+                ) : (
+                  <Alert severity="success" sx={{ py: 0.5 }}>
+                    <Typography variant="body2">No accuracy issues detected.</Typography>
                   </Alert>
-                ))}
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
+                )}
+              </AccordionDetails>
+            </Accordion>
 
-          {/* Relevance Score */}
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                {getCheckStatusIcon(aiNewsworthyChecks.relevance.status)}
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Newsworthy Relevance Score: {aiNewsworthyChecks.relevance.score}/10
-                </Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Stack spacing={2}>
-                {aiNewsworthyChecks.relevance.factors.map((factor, index) => (
-                  <Box key={index}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                      <Typography variant="body2" fontWeight={500}>
-                        {factor.label}
-                      </Typography>
-                      <Typography variant="body2" color="primary" fontWeight={600}>
-                        {factor.value}/10
-                      </Typography>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      {factor.description}
-                    </Typography>
-                  </Box>
-                ))}
-              </Stack>
-            </AccordionDetails>
-          </Accordion>
+            {/* Newsworthy Relevance Score */}
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  {getCheckStatusIcon(
+                    factCheckData.newsworthyRelevance?.overallScore >= 7
+                      ? 'success'
+                      : factCheckData.newsworthyRelevance?.overallScore >= 5
+                        ? 'warning'
+                        : 'error'
+                  )}
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    Newsworthy Relevance Score: {factCheckData.newsworthyRelevance?.overallScore ?? 0}/10
+                  </Typography>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                {factCheckData.newsworthyRelevance?.items && factCheckData.newsworthyRelevance.items.length > 0 ? (
+                  <Stack spacing={2}>
+                    {factCheckData.newsworthyRelevance.items.map((item, index) => (
+                      <Box key={index}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                          <Typography variant="body2" fontWeight={500}>
+                            {item.key}
+                          </Typography>
+                          <Typography variant="body2" color="primary" fontWeight={600}>
+                            {item.score}
+                          </Typography>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {item.message}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Alert severity="info" sx={{ py: 0.5 }}>
+                    <Typography variant="body2">No relevance data available.</Typography>
+                  </Alert>
+                )}
+              </AccordionDetails>
+            </Accordion>
 
-          {/* Content Integrity */}
-          <Accordion defaultExpanded>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                {getCheckStatusIcon(aiNewsworthyChecks.integrity.status)}
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Content Integrity
-                </Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              {aiNewsworthyChecks.integrity.flags.length > 0 ? (
-                <Stack spacing={1.5}>
-                  {aiNewsworthyChecks.integrity.flags.map((flag, index) => (
-                    <Alert key={index} severity={flag.type} icon={<Warning />} sx={{ py: 0.5 }}>
-                      <Typography variant="body2">{flag.text}</Typography>
-                    </Alert>
-                  ))}
-                </Stack>
-              ) : (
-                <Alert severity="success" sx={{ py: 0.5 }}>
-                  <Typography variant="body2">No integrity issues detected.</Typography>
-                </Alert>
-              )}
-            </AccordionDetails>
-          </Accordion>
-        </Stack>
+            {/* Content Integrity */}
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  {getCheckStatusIcon(getOverallStatus(factCheckData.contentIntegrity?.items))}
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    Content Integrity
+                  </Typography>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                {factCheckData.contentIntegrity?.items && factCheckData.contentIntegrity.items.length > 0 ? (
+                  <Stack spacing={1.5}>
+                    {factCheckData.contentIntegrity.items.map((item, index) => {
+                      const severity = item.status === 'ok' ? 'success' : item.status === 'warning' ? 'warning' : 'error';
+                      return (
+                        <Alert key={index} severity={severity} icon={getCheckStatusIcon(item.status)} sx={{ py: 0.5 }}>
+                          <Typography variant="body2" fontWeight={500} gutterBottom>
+                            {item.key}
+                          </Typography>
+                          <Typography variant="caption">{item.message}</Typography>
+                        </Alert>
+                      );
+                    })}
+                  </Stack>
+                ) : (
+                  <Alert severity="success" sx={{ py: 0.5 }}>
+                    <Typography variant="body2">No integrity issues detected.</Typography>
+                  </Alert>
+                )}
+              </AccordionDetails>
+            </Accordion>
+          </Stack>
+        ) : (
+          <Alert severity="info">
+            <Typography variant="body2">No fact-check data available. Please ensure title and description are provided.</Typography>
+          </Alert>
+        )}
       </Drawer>
 
       {/* Editorial Notes Modal */}
@@ -1324,11 +1389,17 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             Cancel
           </Button>
           <Button
-            onClick={() => {
-              const aiSuggestion = generateAISuggestedNote();
-              setEditorialNote(aiSuggestion);
+            onClick={async () => {
+              const { data: refetchedData } = await refetchFactCheck();
+              if (refetchedData?.report) {
+                setEditorialNote(refetchedData.report);
+              } else {
+                const aiSuggestion = generateAISuggestedNote();
+                setEditorialNote(aiSuggestion);
+              }
             }}
-            startIcon={<AutoAwesome />}
+            startIcon={isLoadingFactCheck ? <CircularProgress size={16} color="inherit" /> : <AutoAwesome />}
+            disabled={isLoadingFactCheck}
             sx={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #2196f3 100%)',
               color: 'white',
