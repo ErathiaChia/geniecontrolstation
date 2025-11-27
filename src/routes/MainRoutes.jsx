@@ -20,9 +20,6 @@ const OpsSettings = Loadable(lazy(() => import('pages/ops-settings')));
 
 // render - process pages
 const Application = Loadable(lazy(() => import('pages/apprenticeship-process/application')));
-const DocumentAssessment = Loadable(lazy(() => import('pages/apprenticeship-process/document-assessment')));
-const CandidateScreening = Loadable(lazy(() => import('pages/apprenticeship-process/candidate-screening')));
-const Approval = Loadable(lazy(() => import('pages/apprenticeship-process/pending-approval')));
 
 // render - media pages
 const NewsVerification = Loadable(lazy(() => import('pages/media/news-verification')));
@@ -73,18 +70,6 @@ const MainRoutes = {
         {
           path: 'application',
           element: <Application />
-        },
-        {
-          path: 'document-assessment/:candidateId',
-          element: <DocumentAssessment />
-        },
-        {
-          path: 'candidate-screening/:candidateId',
-          element: <CandidateScreening />
-        },
-        {
-          path: 'approval/:candidateId',
-          element: <Approval />
         }
       ]
     },

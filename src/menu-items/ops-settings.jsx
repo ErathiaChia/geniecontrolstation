@@ -14,7 +14,7 @@ const opsSettings = {
   children: [
     {
       id: 'ops-settings-page',
-      title: 'Ops Settings',
+      title: 'Settings',
       type: 'item',
       url: '/ops-settings',
       icon: icons.Settings
