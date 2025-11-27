@@ -68,6 +68,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 // project imports
 import MainCard from 'components/MainCard';
 import { useNewsFactCheck } from 'hooks/queries/useNewsFactCheck';
+import useNewsVerificationStore from 'store/newsVerificationStore';
 
 // Sample data - filtered for Unverified status
 const unverifiedNewsLeads = [
@@ -327,6 +328,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
   const anchorRef = useRef(null);
   const [requestInfoModalOpen, setRequestInfoModalOpen] = useState(false);
   const [requestInfoMessage, setRequestInfoMessage] = useState('');
+  const updateNewsLead = useNewsVerificationStore((state) => state.updateNewsLead);
 
   const {
     data: factCheckData,
@@ -463,10 +465,43 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
   };
 
   const handleConfirmProceed = () => {
-    console.log('Proceeding to Approval stage with notes:', editorialNote);
+    if (!editorialNote.trim()) {
+      return;
+    }
+
+    const timestamp = new Date().toLocaleString('en-SG', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const existingNotes = Array.isArray(newsLead.editorialNotes) ? newsLead.editorialNotes : [];
+    const juniorNote = {
+      role: 'Junior Editorial',
+      action: 'Submitted for Approval',
+      timestamp,
+      content: editorialNote
+    };
+
+    const updatedLead = {
+      ...newsLead,
+      currentStatus: 'Approval',
+      statusColor: 'warning',
+      juniorEditorialNotes: editorialNote,
+      editorialNotes: [...existingNotes, juniorNote]
+    };
+
+    updateNewsLead(newsLead.id, {
+      currentStatus: 'Approval',
+      statusColor: 'warning',
+      juniorEditorialNotes: editorialNote,
+      editorialNotes: [...existingNotes, juniorNote]
+    });
+
     setNotesModalOpen(false);
-    // Navigate to Approval stage
-    navigate(`/media/news-verification/approval/${newsId}`);
+    navigate(`/media/news-verification/approval/${newsId}`, { state: { newsLead: updatedLead } });
   };
 
   const handleRejectNewsLead = () => {
@@ -560,6 +595,16 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
     if (hasError) return 'error';
     if (hasWarning) return 'warning';
     return 'success';
+  };
+
+  const formatRelevanceKey = (label = '') => {
+    const trimmedLabel = label.trim();
+    if (!trimmedLabel) return 'Unknown';
+    return trimmedLabel
+      .split('_')
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   const renderSectionContent = () => {
@@ -1128,7 +1173,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
       </Grid>
 
       {/* Floating Action Button - AI Insights */}
-      <Tooltip title="AI Newsworthy Insights & Checks" placement="left">
+      <Tooltip title={isLoadingFactCheck ? 'Analyzing...' : 'AI Newsworthy Insights & Checks'} placement="left">
         <Fab
           color="primary"
           aria-label="ai insights"
@@ -1149,21 +1194,25 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
             zIndex: 1000
           }}
         >
-          <MuiBadge
-            badgeContent={
-              factCheckData
-                ? getOverallStatus(factCheckData.factualAccuracy?.items) === 'error' ||
-                  getOverallStatus(factCheckData.contentIntegrity?.items) === 'error' ||
-                  getOverallStatus(factCheckData.factualAccuracy?.items) === 'warning' ||
-                  getOverallStatus(factCheckData.contentIntegrity?.items) === 'warning'
-                  ? '!'
+          {isLoadingFactCheck ? (
+            <CircularProgress color="inherit" size={24} />
+          ) : (
+            <MuiBadge
+              badgeContent={
+                factCheckData
+                  ? getOverallStatus(factCheckData.factualAccuracy?.items) === 'error' ||
+                    getOverallStatus(factCheckData.contentIntegrity?.items) === 'error' ||
+                    getOverallStatus(factCheckData.factualAccuracy?.items) === 'warning' ||
+                    getOverallStatus(factCheckData.contentIntegrity?.items) === 'warning'
+                    ? '!'
+                    : 0
                   : 0
-                : 0
-            }
-            color="error"
-          >
-            <AutoAwesome />
-          </MuiBadge>
+              }
+              color="error"
+            >
+              <AutoAwesome />
+            </MuiBadge>
+          )}
         </Fab>
       </Tooltip>
 
@@ -1295,7 +1344,7 @@ Notes: ${aiNewsworthyChecks.accuracy.status === 'success' ? 'Excellent story wit
                       <Box key={index}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                           <Typography variant="body2" fontWeight={500}>
-                            {item.key}
+                            {formatRelevanceKey(item.key)}
                           </Typography>
                           <Typography variant="body2" color="primary" fontWeight={600}>
                             {item.score}

@@ -70,7 +70,7 @@ import {
   Cancel,
   Undo
 } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 // project imports
 import MainCard from 'components/MainCard';
@@ -688,9 +688,9 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Category
                 </Typography>
-                <Chip 
-                  label={newsLead.storyDetails.category} 
-                  color="primary" 
+                <Chip
+                  label={newsLead.storyDetails.category}
+                  color="primary"
                   size="small"
                   sx={{ mt: 0.5 }}
                 />
@@ -700,8 +700,8 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Urgency Level
                 </Typography>
-                <Chip 
-                  label={newsLead.storyDetails.urgency} 
+                <Chip
+                  label={newsLead.storyDetails.urgency}
                   color={newsLead.storyDetails.urgency === 'Critical' ? 'error' : newsLead.storyDetails.urgency === 'High' ? 'warning' : 'info'}
                   size="small"
                   sx={{ mt: 0.5 }}
@@ -729,10 +729,10 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
             <Grid container spacing={2}>
               {newsLead.attachments?.map((attachment) => (
                 <Grid item xs={12} sm={6} key={attachment.id}>
-                  <Paper 
-                    sx={{ 
-                      p: 2, 
-                      border: 1, 
+                  <Paper
+                    sx={{
+                      p: 2,
+                      border: 1,
                       borderColor: 'success.main',
                       bgcolor: 'success.lighter'
                     }}
@@ -761,7 +761,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                       <Typography variant="caption" color="text.secondary">
                         {attachment.description}
                       </Typography>
-                      <Chip 
+                      <Chip
                         label={attachment.source}
                         size="small"
                         color="success"
@@ -783,11 +783,11 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
             </Typography>
             <Stack spacing={2}>
               {newsLead.links?.map((link) => (
-                <Paper 
+                <Paper
                   key={link.id}
-                  sx={{ 
-                    p: 2, 
-                    border: 1, 
+                  sx={{
+                    p: 2,
+                    border: 1,
                     borderColor: 'success.main',
                     bgcolor: 'success.lighter'
                   }}
@@ -800,18 +800,18 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                           {link.description}
                         </Typography>
                       </Box>
-                      <Chip 
-                        label="Verified" 
-                        size="small" 
-                        color="success" 
+                      <Chip
+                        label="Verified"
+                        size="small"
+                        color="success"
                         icon={<CheckCircle style={{ fontSize: '16px' }} />}
                       />
                     </Box>
-                    <Link 
-                      href={link.url} 
-                      target="_blank" 
+                    <Link
+                      href={link.url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ 
+                      sx={{
                         fontSize: '0.875rem',
                         wordBreak: 'break-all',
                         color: 'primary.main'
@@ -838,7 +838,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                   {newsLead.juniorEditorialNotes}
                 </Typography>
               </Alert>
-              
+
               <Alert severity="success" icon={<Gavel />}>
                 <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                   Senior Editorial Notes
@@ -847,7 +847,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                   {newsLead.seniorEditorialNotes}
                 </Typography>
               </Alert>
-              
+
               <Alert severity="info" icon={<ScheduleIcon />}>
                 <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                   Publisher Notes
@@ -875,9 +875,9 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                   {newsLead.publishingDetails.publishedDateTime}
                 </Typography>
               </Box>
-              
+
               <Divider />
-              
+
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -887,7 +887,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                 </Typography>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                   {newsLead.publishingDetails.channels.map((channel, index) => (
-                    <Chip 
+                    <Chip
                       key={index}
                       label={channel}
                       icon={getChannelIcon(channel)}
@@ -898,23 +898,23 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                   ))}
                 </Stack>
               </Box>
-              
+
               <Divider />
-              
+
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Publishing Priority
                 </Typography>
-                <Chip 
+                <Chip
                   label={newsLead.publishingDetails.priority}
                   color={newsLead.publishingDetails.priority === 'High' ? 'error' : 'info'}
                   size="small"
                   sx={{ mt: 0.5 }}
                 />
               </Box>
-              
+
               <Divider />
-              
+
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Published By
@@ -991,9 +991,9 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                   </Grid>
                 </Grid>
               </Box>
-              
+
               <Divider />
-              
+
               {/* Engagement Metrics */}
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
@@ -1022,9 +1022,9 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                   </Grid>
                 </Grid>
               </Box>
-              
+
               <Divider />
-              
+
               {/* Channel Performance */}
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
@@ -1054,7 +1054,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
-                            <Chip 
+                            <Chip
                               label={channel.engagement}
                               size="small"
                               color={parseInt(channel.engagement) > 25 ? 'success' : 'primary'}
@@ -1074,13 +1074,13 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
         return (
           <Box>
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-              <Tabs 
-                value={selectedChannel} 
+              <Tabs
+                value={selectedChannel}
                 onChange={(e, newValue) => setSelectedChannel(newValue)}
                 variant="fullWidth"
               >
                 {channels.map((channel) => (
-                  <Tab 
+                  <Tab
                     key={channel.id}
                     icon={channel.icon}
                     label={channel.name}
@@ -1163,15 +1163,15 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
     <>
       {/* Header Section */}
       <Box sx={{ mt: 0, mb: 3 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          px: { xs: 2, sm: 3 }, 
-          py: 2, 
-          bgcolor: 'background.paper', 
-          borderBottom: 1, 
-          borderColor: 'divider' 
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: { xs: 2, sm: 3 },
+          py: 2,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider'
         }}>
           <Button
             startIcon={<ArrowBack />}
@@ -1187,18 +1187,18 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
               Published - Audit View
             </Typography>
           </Box>
-          <Chip 
-            label="Published" 
-            color="success" 
+          <Chip
+            label="Published"
+            color="success"
             icon={<CheckCircle />}
             sx={{ fontWeight: 600 }}
           />
         </Box>
-        
+
         {/* Stepper */}
         <Box sx={{ px: { xs: 2, sm: 3 }, py: 2, bgcolor: 'background.paper' }}>
-          <Stepper 
-            activeStep={activeStep} 
+          <Stepper
+            activeStep={activeStep}
             alternativeLabel
             sx={{
               '& .MuiStepConnector-root': {
@@ -1267,16 +1267,16 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
                   onClick={() => setSelectedSection(section.id)}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ 
-                      fontSize: '20px', 
+                    <Box sx={{
+                      fontSize: '20px',
                       color: selectedSection === section.id ? 'primary.main' : 'text.secondary',
                       display: 'flex',
                       alignItems: 'center'
                     }}>
                       {section.icon}
                     </Box>
-                    <Typography 
-                      variant="subtitle1" 
+                    <Typography
+                      variant="subtitle1"
                       fontWeight={selectedSection === section.id ? 600 : 400}
                     >
                       {section.name}
@@ -1290,7 +1290,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
 
         {/* Right Section: Content Display (2/3) */}
         <Grid item xs={8} sx={{ maxWidth: '66.667%', flexBasis: '66.667%' }}>
-          <MainCard 
+          <MainCard
             title={
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h5">{sections[selectedSection].name}</Typography>
@@ -1313,6 +1313,8 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
 export default function PublishedNewsLeads() {
   const navigate = useNavigate();
   const { newsId } = useParams();
+  const location = useLocation();
+  const stateLead = location.state?.newsLead;
 
   // If no newsId, redirect to main news verification page
   useEffect(() => {
@@ -1323,8 +1325,12 @@ export default function PublishedNewsLeads() {
 
   // If newsId is provided, show detail view
   if (newsId) {
-    const newsLead = publishedNewsLeads.find(n => n.id === parseInt(newsId));
-    
+    const parsedNewsId = Number.parseInt(newsId, 10);
+    const newsLeadFromList = Number.isNaN(parsedNewsId)
+      ? undefined
+      : publishedNewsLeads.find((n) => n.id === parsedNewsId);
+    const newsLead = stateLead && stateLead.id === parsedNewsId ? stateLead : newsLeadFromList;
+
     if (!newsLead) {
       return (
         <Box>
@@ -1332,8 +1338,8 @@ export default function PublishedNewsLeads() {
             <Typography variant="body1">
               The requested news lead could not be found.
             </Typography>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={() => navigate('/media/news-verification')}
               sx={{ mt: 2 }}
             >

@@ -77,10 +77,11 @@ import {
   ArrowDropDown,
   Undo
 } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 // project imports
 import MainCard from 'components/MainCard';
+import useNewsVerificationStore from 'store/newsVerificationStore';
 
 // Sample data - filtered for Approval status
 const approvalNewsLeads = [
@@ -499,6 +500,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
   const [editorialNote, setEditorialNote] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const updateNewsLead = useNewsVerificationStore((state) => state.updateNewsLead);
 
   const sections = [
     { id: 0, name: 'Personal Details', icon: <PersonIcon /> },
@@ -525,7 +527,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
     const grammarStatus = aiSeniorEditorialChecks.grammar.status === 'success' ? 'Passed (100%)' : 'Minor suggestions needed';
     const readabilityScore = aiSeniorEditorialChecks.tonality.score >= 8 ? '8.5/10' : '7.5/10';
     const qualityRating = aiSeniorEditorialChecks.tonality.score >= 8 ? `${aiSeniorEditorialChecks.tonality.score}/10` : '7.5/10';
-    
+
     const baseInfo = `Senior Editorial Review - ${new Date().toLocaleDateString()}
 
 PREVIOUS REVIEW STATUS
@@ -716,18 +718,55 @@ This news lead requires comprehensive re-verification before it can proceed thro
   };
 
   const handleConfirmAction = () => {
-    console.log(`${modalAction} with notes:`, editorialNote);
-    setNotesModalOpen(false);
-    
-    if (modalAction === 'approve') {
-      navigate(`/media/news-verification/schedule/${newsId}`);
-    } else if (modalAction === 'pushback') {
-      navigate(`/media/news-verification/unverified/${newsId}`);
-    } else if (modalAction === 'revert') {
-      navigate(`/media/news-verification/unverified/${newsId}`);
-    } else {
-      navigate('/media/news-verification');
+    if (!editorialNote.trim()) {
+      return;
     }
+
+    const timestamp = new Date().toLocaleString('en-SG', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const existingNotes = Array.isArray(newsLead.editorialNotes) ? newsLead.editorialNotes : [];
+    const seniorNote = {
+      role: 'Senior Editorial',
+      action:
+        modalAction === 'approve'
+          ? 'Approved'
+          : modalAction === 'pushback'
+            ? 'Returned'
+            : modalAction === 'revert'
+              ? 'Reverted'
+              : 'Rejected',
+      timestamp,
+      content: editorialNote
+    };
+
+    let navigationTarget = '/media/news-verification';
+    const updates = {
+      seniorEditorialNotes: editorialNote,
+      editorialNotes: [...existingNotes, seniorNote]
+    };
+
+    if (modalAction === 'approve') {
+      updates.currentStatus = 'Schedule';
+      updates.statusColor = 'info';
+      navigationTarget = `/media/news-verification/schedule/${newsId}`;
+    } else if (modalAction === 'pushback' || modalAction === 'revert') {
+      updates.currentStatus = 'Unverified';
+      updates.statusColor = 'error';
+      navigationTarget = `/media/news-verification/unverified/${newsId}`;
+    } else if (modalAction === 'reject') {
+      updates.currentStatus = 'Rejected';
+      updates.statusColor = 'default';
+    }
+
+    updateNewsLead(newsLead.id, updates);
+    setNotesModalOpen(false);
+    navigate(navigationTarget, { state: { newsLead: { ...newsLead, ...updates } } });
   };
 
   const getCheckStatusIcon = (status) => {
@@ -853,9 +892,9 @@ This news lead requires comprehensive re-verification before it can proceed thro
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Category
                 </Typography>
-                <Chip 
-                  label={newsLead.storyDetails.category} 
-                  color="primary" 
+                <Chip
+                  label={newsLead.storyDetails.category}
+                  color="primary"
                   size="small"
                   sx={{ mt: 0.5 }}
                 />
@@ -865,8 +904,8 @@ This news lead requires comprehensive re-verification before it can proceed thro
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Urgency Level
                 </Typography>
-                <Chip 
-                  label={newsLead.storyDetails.urgency} 
+                <Chip
+                  label={newsLead.storyDetails.urgency}
                   color={newsLead.storyDetails.urgency === 'Critical' ? 'error' : 'warning'}
                   size="small"
                   sx={{ mt: 0.5 }}
@@ -894,10 +933,10 @@ This news lead requires comprehensive re-verification before it can proceed thro
             <Grid container spacing={2}>
               {newsLead.attachments?.map((attachment) => (
                 <Grid item xs={12} sm={6} key={attachment.id}>
-                  <Paper 
-                    sx={{ 
-                      p: 2, 
-                      border: 1, 
+                  <Paper
+                    sx={{
+                      p: 2,
+                      border: 1,
                       borderColor: attachment.source?.includes('Own Databank') ? 'success.main' : 'warning.main',
                       bgcolor: attachment.source?.includes('Own Databank') ? 'success.lighter' : 'warning.lighter',
                       '&:hover': {
@@ -930,7 +969,7 @@ This news lead requires comprehensive re-verification before it can proceed thro
                       <Typography variant="caption" color="text.secondary">
                         {attachment.description}
                       </Typography>
-                      <Chip 
+                      <Chip
                         label={attachment.source}
                         size="small"
                         color={attachment.source?.includes('Own Databank') ? 'success' : 'warning'}
@@ -960,11 +999,11 @@ This news lead requires comprehensive re-verification before it can proceed thro
             </Typography>
             <Stack spacing={2}>
               {newsLead.links?.map((link) => (
-                <Paper 
+                <Paper
                   key={link.id}
-                  sx={{ 
-                    p: 2, 
-                    border: 1, 
+                  sx={{
+                    p: 2,
+                    border: 1,
                     borderColor: link.verified ? 'success.main' : 'divider',
                     bgcolor: link.verified ? 'success.lighter' : 'background.paper'
                   }}
@@ -978,19 +1017,19 @@ This news lead requires comprehensive re-verification before it can proceed thro
                         </Typography>
                       </Box>
                       {link.verified && (
-                        <Chip 
-                          label="Verified" 
-                          size="small" 
-                          color="success" 
+                        <Chip
+                          label="Verified"
+                          size="small"
+                          color="success"
                           icon={<CheckCircle style={{ fontSize: '16px' }} />}
                         />
                       )}
                     </Box>
-                    <Link 
-                      href={link.url} 
-                      target="_blank" 
+                    <Link
+                      href={link.url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ 
+                      sx={{
                         fontSize: '0.875rem',
                         wordBreak: 'break-all',
                         color: 'primary.main'
@@ -1019,24 +1058,24 @@ This news lead requires comprehensive re-verification before it can proceed thro
             <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
               Editorial Conversation Thread
             </Typography>
-            
+
             {newsLead.editorialNotes && newsLead.editorialNotes.length > 0 ? (
               <Stack spacing={2}>
                 {newsLead.editorialNotes.map((note, index) => (
-                  <Paper 
+                  <Paper
                     key={index}
-                    sx={{ 
-                      p: 2, 
-                      border: 1, 
+                    sx={{
+                      p: 2,
+                      border: 1,
                       borderColor: 'divider',
                       bgcolor: note.role === 'Junior Editorial' ? 'primary.lighter' : 'warning.lighter'
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Avatar 
-                        sx={{ 
-                          width: 32, 
-                          height: 32, 
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
                           bgcolor: note.role === 'Junior Editorial' ? 'primary.main' : 'warning.main',
                           fontSize: '0.875rem'
                         }}
@@ -1051,12 +1090,12 @@ This news lead requires comprehensive re-verification before it can proceed thro
                           {note.timestamp}
                         </Typography>
                       </Box>
-                      <Chip 
+                      <Chip
                         label={note.action}
                         size="small"
                         color={
-                          note.action === 'Approved' || note.action === 'Submitted for Approval' ? 'success' : 
-                          note.action === 'Rejected' ? 'error' : 
+                          note.action === 'Approved' || note.action === 'Submitted for Approval' ? 'success' :
+                          note.action === 'Rejected' ? 'error' :
                           'warning'
                         }
                       />
@@ -1081,13 +1120,13 @@ This news lead requires comprehensive re-verification before it can proceed thro
           <Box>
             {/* Channel Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-              <Tabs 
-                value={selectedChannel} 
+              <Tabs
+                value={selectedChannel}
                 onChange={(e, newValue) => setSelectedChannel(newValue)}
                 variant="fullWidth"
               >
                 {channels.map((channel) => (
-                  <Tab 
+                  <Tab
                     key={channel.id}
                     icon={channel.icon}
                     label={channel.name}
@@ -1348,15 +1387,15 @@ This news lead requires comprehensive re-verification before it can proceed thro
     <>
       {/* Header Section */}
       <Box sx={{ mt: 0, mb: 3 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          px: { xs: 2, sm: 3 }, 
-          py: 2, 
-          bgcolor: 'background.paper', 
-          borderBottom: 1, 
-          borderColor: 'divider' 
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: { xs: 2, sm: 3 },
+          py: 2,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider'
         }}>
           <Button
             startIcon={<ArrowBack />}
@@ -1403,11 +1442,11 @@ This news lead requires comprehensive re-verification before it can proceed thro
             </MenuItem>
           </Menu>
         </Box>
-        
+
         {/* Stepper */}
         <Box sx={{ px: { xs: 2, sm: 3 }, py: 2, bgcolor: 'background.paper' }}>
-          <Stepper 
-            activeStep={activeStep} 
+          <Stepper
+            activeStep={activeStep}
             alternativeLabel
             sx={{
               '& .MuiStepConnector-root': {
@@ -1427,10 +1466,10 @@ This news lead requires comprehensive re-verification before it can proceed thro
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: index === activeStep 
-                          ? 'primary.main' 
-                          : index < activeStep 
-                          ? 'success.main' 
+                        backgroundColor: index === activeStep
+                          ? 'primary.main'
+                          : index < activeStep
+                          ? 'success.main'
                           : 'grey.300',
                         color: index <= activeStep ? 'white' : 'grey.600',
                         transition: 'all 0.3s ease'
@@ -1480,16 +1519,16 @@ This news lead requires comprehensive re-verification before it can proceed thro
                   onClick={() => setSelectedSection(section.id)}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ 
-                      fontSize: '20px', 
+                    <Box sx={{
+                      fontSize: '20px',
                       color: selectedSection === section.id ? 'primary.main' : 'text.secondary',
                       display: 'flex',
                       alignItems: 'center'
                     }}>
                       {section.icon}
                     </Box>
-                    <Typography 
-                      variant="subtitle1" 
+                    <Typography
+                      variant="subtitle1"
                       fontWeight={selectedSection === section.id ? 600 : 400}
                     >
                       {section.name}
@@ -1503,13 +1542,13 @@ This news lead requires comprehensive re-verification before it can proceed thro
 
         {/* Right Section: Content Display (2/3) */}
         <Grid item xs={8} sx={{ maxWidth: '66.667%', flexBasis: '66.667%' }}>
-          <MainCard 
+          <MainCard
             title={
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h5">{sections[selectedSection].name}</Typography>
                 {selectedSection === 1 && (
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     color={isEditing ? 'primary' : 'default'}
                     onClick={() => setIsEditing(!isEditing)}
                   >
@@ -1549,11 +1588,11 @@ This news lead requires comprehensive re-verification before it can proceed thro
             zIndex: 1000
           }}
         >
-          <MuiBadge 
+          <MuiBadge
             badgeContent={
-              aiSeniorEditorialChecks.grammar.status === 'warning' || 
+              aiSeniorEditorialChecks.grammar.status === 'warning' ||
               aiSeniorEditorialChecks.images.status === 'warning' ? '!' : 0
-            } 
+            }
             color="error"
           >
             <AutoAwesome />
@@ -1575,7 +1614,7 @@ This news lead requires comprehensive re-verification before it can proceed thro
       >
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesome sx={{ 
+            <AutoAwesome sx={{
               fontSize: '28px',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #2196f3 100%)',
               WebkitBackgroundClip: 'text',
@@ -1591,7 +1630,7 @@ This news lead requires comprehensive re-verification before it can proceed thro
         <Divider sx={{ mb: 2 }} />
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Button 
+          <Button
             size="small"
             startIcon={<AutoAwesome />}
             onClick={() => console.log('Regenerate AI insights')}
@@ -1636,7 +1675,7 @@ This news lead requires comprehensive re-verification before it can proceed thro
                     <ListItemIcon sx={{ minWidth: 32 }}>
                       {getCheckStatusIcon(item.status)}
                     </ListItemIcon>
-                    <ListItemText 
+                    <ListItemText
                       primary={item.label}
                       secondary={item.message}
                       primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
@@ -1662,7 +1701,7 @@ This news lead requires comprehensive re-verification before it can proceed thro
             <AccordionDetails>
               <Stack spacing={1.5}>
                 {aiSeniorEditorialChecks.grammar.verified.map((item, index) => (
-                  <Alert 
+                  <Alert
                     key={index}
                     severity="success"
                     icon={<CheckCircle />}
@@ -1674,7 +1713,7 @@ This news lead requires comprehensive re-verification before it can proceed thro
                   </Alert>
                 ))}
                 {aiSeniorEditorialChecks.grammar.issues.map((issue, index) => (
-                  <Alert 
+                  <Alert
                     key={index}
                     severity="warning"
                     icon={<Warning />}
@@ -1735,7 +1774,7 @@ This news lead requires comprehensive re-verification before it can proceed thro
             <AccordionDetails>
               <Stack spacing={1.5}>
                 {aiSeniorEditorialChecks.images.flags.map((flag, index) => (
-                  <Alert 
+                  <Alert
                     key={index}
                     severity={flag.type}
                     icon={flag.type === 'success' ? <CheckCircle /> : <Warning />}
@@ -1753,8 +1792,8 @@ This news lead requires comprehensive re-verification before it can proceed thro
           {/* Action Buttons */}
           <Divider />
           <Stack spacing={1.5}>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               color="success"
               startIcon={<CheckCircle />}
               fullWidth
@@ -1765,8 +1804,8 @@ This news lead requires comprehensive re-verification before it can proceed thro
             >
               Approve & Move to Schedule
             </Button>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               color="warning"
               startIcon={<Reply />}
               fullWidth
@@ -1777,8 +1816,8 @@ This news lead requires comprehensive re-verification before it can proceed thro
             >
               Push Back to Junior Editorial
             </Button>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               color="error"
               startIcon={<Cancel />}
               fullWidth
@@ -1794,21 +1833,21 @@ This news lead requires comprehensive re-verification before it can proceed thro
       </Drawer>
 
       {/* Editorial Notes Modal */}
-      <Dialog 
-        open={notesModalOpen} 
+      <Dialog
+        open={notesModalOpen}
         onClose={() => setNotesModalOpen(false)}
         maxWidth="md"
         fullWidth
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Notes 
+            <Notes
               color={
-                modalAction === 'approve' ? 'success' : 
-                modalAction === 'reject' ? 'error' : 
+                modalAction === 'approve' ? 'success' :
+                modalAction === 'reject' ? 'error' :
                 modalAction === 'revert' ? 'primary' :
                 'warning'
-              } 
+              }
             />
             <Typography variant="h5">
               {modalAction === 'approve' ? 'Approve News Lead' :
@@ -1826,13 +1865,13 @@ This news lead requires comprehensive re-verification before it can proceed thro
         </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2}>
-            <Alert 
+            <Alert
               severity={
-                modalAction === 'approve' ? 'success' : 
-                modalAction === 'reject' ? 'error' : 
+                modalAction === 'approve' ? 'success' :
+                modalAction === 'reject' ? 'error' :
                 modalAction === 'revert' ? 'info' :
                 'warning'
-              } 
+              }
               icon={<AutoAwesome />}
             >
               The notes below have been pre-filled by AI based on your editorial checks. Please review and edit as needed.
@@ -1851,13 +1890,13 @@ This news lead requires comprehensive re-verification before it can proceed thro
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button 
+          <Button
             onClick={() => setNotesModalOpen(false)}
             color="inherit"
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={() => {
               const aiSuggestion = generateAISuggestedNote(modalAction);
               setEditorialNote(aiSuggestion);
@@ -1875,12 +1914,12 @@ This news lead requires comprehensive re-verification before it can proceed thro
           >
             Regenerate AI Notes
           </Button>
-          <Button 
+          <Button
             onClick={handleConfirmAction}
             variant="contained"
             color={
-              modalAction === 'approve' ? 'success' : 
-              modalAction === 'reject' ? 'error' : 
+              modalAction === 'approve' ? 'success' :
+              modalAction === 'reject' ? 'error' :
               modalAction === 'revert' ? 'primary' :
               'warning'
             }
@@ -1903,6 +1942,8 @@ This news lead requires comprehensive re-verification before it can proceed thro
 export default function ApprovalNewsLeads() {
   const navigate = useNavigate();
   const { newsId } = useParams();
+  const location = useLocation();
+  const stateLead = location.state?.newsLead;
 
   // If no newsId, redirect to main news verification page
   useEffect(() => {
@@ -1913,8 +1954,12 @@ export default function ApprovalNewsLeads() {
 
   // If newsId is provided, show detail view
   if (newsId) {
-    const newsLead = approvalNewsLeads.find(n => n.id === parseInt(newsId));
-    
+    const parsedNewsId = Number.parseInt(newsId, 10);
+    const newsLeadFromList = Number.isNaN(parsedNewsId)
+      ? undefined
+      : approvalNewsLeads.find((n) => n.id === parsedNewsId);
+    const newsLead = stateLead && stateLead.id === parsedNewsId ? stateLead : newsLeadFromList;
+
     if (!newsLead) {
       return (
         <Box>
@@ -1922,8 +1967,8 @@ export default function ApprovalNewsLeads() {
             <Typography variant="body1">
               The requested news lead could not be found.
             </Typography>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={() => navigate('/media/news-verification')}
               sx={{ mt: 2 }}
             >

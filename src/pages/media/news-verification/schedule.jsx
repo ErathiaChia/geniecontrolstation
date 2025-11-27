@@ -88,13 +88,14 @@ import {
   Notes,
   Send
 } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 
 // project imports
 import MainCard from 'components/MainCard';
+import useNewsVerificationStore from 'store/newsVerificationStore';
 
 // Sample data - filtered for Schedule status
 const scheduleNewsLeads = [
@@ -495,7 +496,18 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
   const [selectedSection, setSelectedSection] = useState(5);
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [activeStep] = useState(2); // Current step in verification process (Schedule = step 2)
-  const [publishDateTime, setPublishDateTime] = useState(new Date());
+  const [publishDateTime, setPublishDateTime] = useState(
+    newsLead.publishingDetails?.publishedDateTime ? new Date(newsLead.publishingDetails.publishedDateTime) : new Date()
+  );
+  const channelLabelMap = {
+    website: 'Website',
+    facebook: 'Facebook',
+    twitter: 'Twitter',
+    instagram: 'Instagram',
+    linkedin: 'LinkedIn',
+    youtube: 'YouTube',
+    email: 'Email Newsletter'
+  };
   const [selectedChannels, setSelectedChannels] = useState({
     website: true,
     facebook: true,
@@ -512,6 +524,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
   const [notesModalOpen, setNotesModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState('publish'); // 'publish', 'reject', 'revert'
   const [publisherNote, setPublisherNote] = useState('');
+  const updateNewsLead = useNewsVerificationStore((state) => state.updateNewsLead);
 
   const sections = [
     { id: 5, name: 'Publishing Schedule', icon: <ScheduleIcon />, confirmed: false },
@@ -541,7 +554,7 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
       .filter(([_, selected]) => selected)
       .map(([channel]) => channel.charAt(0).toUpperCase() + channel.slice(1))
       .join(', ');
-    
+
     if (action === 'publish') {
       return `Publisher Review & Scheduling Notes - ${currentDate}
 
@@ -663,19 +676,90 @@ Date: ${currentDate}`;
   };
 
   const handleConfirmAction = () => {
-    console.log('Confirming action:', modalAction);
-    setNotesModalOpen(false);
-    
-    if (modalAction === 'publish') {
-      // Navigate to Published stage
-      navigate(`/media/news-verification/published/${newsId}`);
-    } else if (modalAction === 'reject') {
-      // Navigate back to news verification
-      navigate('/media/news-verification');
-    } else if (modalAction === 'revert') {
-      // Navigate back to approval stage
-      navigate(`/media/news-verification/approval/${newsId}`);
+    if (!publisherNote.trim()) {
+      return;
     }
+
+    const selectedChannelNames = (() => {
+      const names = Object.entries(selectedChannels)
+        .filter(([, isSelected]) => isSelected)
+        .map(([key]) => channelLabelMap[key] ?? key);
+      return names.length > 0 ? names : ['Website'];
+    })();
+
+    const formattedPublishDate = publishDateTime
+      ? new Date(publishDateTime).toLocaleString('en-SG', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : new Date().toLocaleString('en-SG', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+    const defaultPerformance = {
+      views: 0,
+      likes: 0,
+      shares: 0,
+      comments: 0,
+      engagementRate: '0%',
+      reachPercentage: '0%'
+    };
+
+    const defaultChannelPerformance = selectedChannelNames.map((channel) => ({
+      channel,
+      views: 0,
+      engagement: '0%'
+    }));
+
+    const commonUpdates = {
+      publisherNotes: publisherNote
+    };
+
+    let navigationTarget = '/media/news-verification';
+    let updates = {};
+
+    if (modalAction === 'publish') {
+      updates = {
+        ...commonUpdates,
+        currentStatus: 'Published',
+        statusColor: 'success',
+        publishingDetails: {
+          publishedDateTime: formattedPublishDate,
+          channels: selectedChannelNames,
+          priority:
+            newsLead.storyDetails?.urgency === 'High' || newsLead.storyDetails?.urgency === 'Critical' ? 'High' : 'Normal',
+          publishedBy: 'Publisher Team'
+        },
+        publishedDate: formattedPublishDate,
+        performanceMetrics: newsLead.performanceMetrics || defaultPerformance,
+        channelPerformance: newsLead.channelPerformance || defaultChannelPerformance
+      };
+      navigationTarget = `/media/news-verification/published/${newsId}`;
+    } else if (modalAction === 'revert') {
+      updates = {
+        ...commonUpdates,
+        currentStatus: 'Approval',
+        statusColor: 'warning'
+      };
+      navigationTarget = `/media/news-verification/approval/${newsId}`;
+    } else if (modalAction === 'reject') {
+      updates = {
+        ...commonUpdates,
+        currentStatus: 'Rejected',
+        statusColor: 'default'
+      };
+    }
+
+    updateNewsLead(newsLead.id, updates);
+    setNotesModalOpen(false);
+    navigate(navigationTarget, { state: { newsLead: { ...newsLead, ...updates } } });
   };
 
   const getCheckStatusIcon = (status) => {
@@ -781,9 +865,9 @@ Date: ${currentDate}`;
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Category
                 </Typography>
-                <Chip 
-                  label={newsLead.storyDetails.category} 
-                  color="primary" 
+                <Chip
+                  label={newsLead.storyDetails.category}
+                  color="primary"
                   size="small"
                   sx={{ mt: 0.5 }}
                 />
@@ -793,8 +877,8 @@ Date: ${currentDate}`;
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Urgency Level
                 </Typography>
-                <Chip 
-                  label={newsLead.storyDetails.urgency} 
+                <Chip
+                  label={newsLead.storyDetails.urgency}
                   color={newsLead.storyDetails.urgency === 'Critical' ? 'error' : newsLead.storyDetails.urgency === 'High' ? 'warning' : 'info'}
                   size="small"
                   sx={{ mt: 0.5 }}
@@ -822,10 +906,10 @@ Date: ${currentDate}`;
             <Grid container spacing={2}>
               {newsLead.attachments?.map((attachment) => (
                 <Grid item xs={12} sm={6} key={attachment.id}>
-                  <Paper 
-                    sx={{ 
-                      p: 2, 
-                      border: 1, 
+                  <Paper
+                    sx={{
+                      p: 2,
+                      border: 1,
                       borderColor: 'success.main',
                       bgcolor: 'success.lighter',
                       '&:hover': {
@@ -858,7 +942,7 @@ Date: ${currentDate}`;
                       <Typography variant="caption" color="text.secondary">
                         {attachment.description}
                       </Typography>
-                      <Chip 
+                      <Chip
                         label={attachment.source}
                         size="small"
                         color="success"
@@ -880,11 +964,11 @@ Date: ${currentDate}`;
             </Typography>
             <Stack spacing={2}>
               {newsLead.links?.map((link) => (
-                <Paper 
+                <Paper
                   key={link.id}
-                  sx={{ 
-                    p: 2, 
-                    border: 1, 
+                  sx={{
+                    p: 2,
+                    border: 1,
                     borderColor: 'success.main',
                     bgcolor: 'success.lighter'
                   }}
@@ -897,18 +981,18 @@ Date: ${currentDate}`;
                           {link.description}
                         </Typography>
                       </Box>
-                      <Chip 
-                        label="Verified" 
-                        size="small" 
-                        color="success" 
+                      <Chip
+                        label="Verified"
+                        size="small"
+                        color="success"
                         icon={<CheckCircle style={{ fontSize: '16px' }} />}
                       />
                     </Box>
-                    <Link 
-                      href={link.url} 
-                      target="_blank" 
+                    <Link
+                      href={link.url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ 
+                      sx={{
                         fontSize: '0.875rem',
                         wordBreak: 'break-all',
                         color: 'primary.main'
@@ -964,9 +1048,9 @@ Date: ${currentDate}`;
                   />
                 </LocalizationProvider>
               </Box>
-              
+
               <Divider />
-              
+
               <Box>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -1040,7 +1124,7 @@ Date: ${currentDate}`;
                   />
                 </Stack>
               </Box>
-              
+
             </Stack>
           </Box>
         );
@@ -1049,13 +1133,13 @@ Date: ${currentDate}`;
         return (
           <Box>
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-              <Tabs 
-                value={selectedChannel} 
+              <Tabs
+                value={selectedChannel}
                 onChange={(e, newValue) => setSelectedChannel(newValue)}
                 variant="fullWidth"
               >
                 {channels.map((channel) => (
-                  <Tab 
+                  <Tab
                     key={channel.id}
                     icon={channel.icon}
                     label={channel.name}
@@ -1181,15 +1265,15 @@ Date: ${currentDate}`;
     <>
       {/* Header Section */}
       <Box sx={{ mt: 0, mb: 3 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          px: { xs: 2, sm: 3 }, 
-          py: 2, 
-          bgcolor: 'background.paper', 
-          borderBottom: 1, 
-          borderColor: 'divider' 
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: { xs: 2, sm: 3 },
+          py: 2,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider'
         }}>
           <Button
             startIcon={<ArrowBack />}
@@ -1236,11 +1320,11 @@ Date: ${currentDate}`;
             </MenuItem>
           </Menu>
         </Box>
-        
+
         {/* Stepper */}
         <Box sx={{ px: { xs: 2, sm: 3 }, py: 2, bgcolor: 'background.paper' }}>
-          <Stepper 
-            activeStep={activeStep} 
+          <Stepper
+            activeStep={activeStep}
             alternativeLabel
             sx={{
               '& .MuiStepConnector-root': {
@@ -1260,10 +1344,10 @@ Date: ${currentDate}`;
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: index === activeStep 
-                          ? 'primary.main' 
-                          : index < activeStep 
-                          ? 'success.main' 
+                        backgroundColor: index === activeStep
+                          ? 'primary.main'
+                          : index < activeStep
+                          ? 'success.main'
                           : 'grey.300',
                         color: index <= activeStep ? 'white' : 'grey.600',
                         transition: 'all 0.3s ease'
@@ -1314,16 +1398,16 @@ Date: ${currentDate}`;
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                      <Box sx={{ 
-                        fontSize: '20px', 
+                      <Box sx={{
+                        fontSize: '20px',
                         color: selectedSection === section.id ? 'primary.main' : section.confirmed ? 'success.main' : 'text.secondary',
                         display: 'flex',
                         alignItems: 'center'
                       }}>
                         {section.icon}
                       </Box>
-                      <Typography 
-                        variant="subtitle1" 
+                      <Typography
+                        variant="subtitle1"
                         fontWeight={selectedSection === section.id ? 600 : 400}
                       >
                         {section.name}
@@ -1341,7 +1425,7 @@ Date: ${currentDate}`;
 
         {/* Right Section: Content Display (2/3) */}
         <Grid item xs={8} sx={{ maxWidth: '66.667%', flexBasis: '66.667%' }}>
-          <MainCard 
+          <MainCard
             title={
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h5">{sections.find(s => s.id === selectedSection)?.name}</Typography>
@@ -1396,7 +1480,7 @@ Date: ${currentDate}`;
       >
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesome sx={{ 
+            <AutoAwesome sx={{
               fontSize: '28px',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #2196f3 100%)',
               WebkitBackgroundClip: 'text',
@@ -1412,7 +1496,7 @@ Date: ${currentDate}`;
         <Divider sx={{ mb: 2 }} />
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Button 
+          <Button
             variant="contained"
             size="small"
             startIcon={<AutoAwesome />}
@@ -1464,7 +1548,7 @@ Date: ${currentDate}`;
                     <Chip label={`Reach: ${aiPublisherAssistant.optimalTiming.recommendation.reach}`} size="small" color="info" />
                   </Box>
                 </Alert>
-                
+
                 <Typography variant="subtitle2" color="text.secondary">
                   Alternative Times:
                 </Typography>
@@ -1505,7 +1589,7 @@ Date: ${currentDate}`;
                   </Typography>
                   <Stack spacing={1}>
                     {aiPublisherAssistant.channelRecommendation.primary.map((channel, index) => (
-                      <Alert 
+                      <Alert
                         key={index}
                         severity={channel.priority === 'High' ? 'success' : 'info'}
                         icon={<CheckCircle />}
@@ -1521,7 +1605,7 @@ Date: ${currentDate}`;
                     ))}
                   </Stack>
                 </Box>
-                
+
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Secondary Channels:
@@ -1569,9 +1653,9 @@ Date: ${currentDate}`;
                       <Typography variant="caption" color="text.secondary">
                         Interest Level:
                       </Typography>
-                      <Chip 
-                        label={demo.interest} 
-                        size="small" 
+                      <Chip
+                        label={demo.interest}
+                        size="small"
                         color={demo.interest === 'Very High' ? 'success' : demo.interest === 'High' ? 'primary' : 'default'}
                       />
                     </Box>
@@ -1584,20 +1668,20 @@ Date: ${currentDate}`;
       </Drawer>
 
       {/* Publisher Notes Modal */}
-      <Dialog 
-        open={notesModalOpen} 
+      <Dialog
+        open={notesModalOpen}
         onClose={() => setNotesModalOpen(false)}
         maxWidth="md"
         fullWidth
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Notes 
+            <Notes
               color={
-                modalAction === 'publish' ? 'success' : 
-                modalAction === 'reject' ? 'error' : 
+                modalAction === 'publish' ? 'success' :
+                modalAction === 'reject' ? 'error' :
                 'primary'
-              } 
+              }
             />
             <Typography variant="h5">
               {modalAction === 'publish' ? 'Confirm Publication Schedule' :
@@ -1613,12 +1697,12 @@ Date: ${currentDate}`;
         </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2}>
-            <Alert 
+            <Alert
               severity={
-                modalAction === 'publish' ? 'success' : 
-                modalAction === 'reject' ? 'error' : 
+                modalAction === 'publish' ? 'success' :
+                modalAction === 'reject' ? 'error' :
                 'info'
-              } 
+              }
               icon={<AutoAwesome />}
             >
               The notes below have been pre-filled by AI based on your scheduling configuration. Please review and edit as needed.
@@ -1637,13 +1721,13 @@ Date: ${currentDate}`;
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button 
+          <Button
             onClick={() => setNotesModalOpen(false)}
             color="inherit"
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={() => {
               const aiSuggestion = generateAISuggestedNote(modalAction);
               setPublisherNote(aiSuggestion);
@@ -1661,12 +1745,12 @@ Date: ${currentDate}`;
           >
             Regenerate AI Notes
           </Button>
-          <Button 
+          <Button
             onClick={handleConfirmAction}
             variant="contained"
             color={
-              modalAction === 'publish' ? 'success' : 
-              modalAction === 'reject' ? 'error' : 
+              modalAction === 'publish' ? 'success' :
+              modalAction === 'reject' ? 'error' :
               'primary'
             }
             endIcon={<Send />}
@@ -1687,6 +1771,8 @@ Date: ${currentDate}`;
 export default function ScheduleNewsLeads() {
   const navigate = useNavigate();
   const { newsId } = useParams();
+  const location = useLocation();
+  const stateLead = location.state?.newsLead;
 
   // If no newsId, redirect to main news verification page
   useEffect(() => {
@@ -1697,8 +1783,12 @@ export default function ScheduleNewsLeads() {
 
   // If newsId is provided, show detail view
   if (newsId) {
-    const newsLead = scheduleNewsLeads.find(n => n.id === parseInt(newsId));
-    
+    const parsedNewsId = Number.parseInt(newsId, 10);
+    const newsLeadFromList = Number.isNaN(parsedNewsId)
+      ? undefined
+      : scheduleNewsLeads.find((n) => n.id === parsedNewsId);
+    const newsLead = stateLead && stateLead.id === parsedNewsId ? stateLead : newsLeadFromList;
+
     if (!newsLead) {
       return (
         <Box>
@@ -1706,8 +1796,8 @@ export default function ScheduleNewsLeads() {
             <Typography variant="body1">
               The requested news lead could not be found.
             </Typography>
-            <Button 
-              variant="outlined" 
+            <Button
+              variant="outlined"
               onClick={() => navigate('/media/news-verification')}
               sx={{ mt: 2 }}
             >
