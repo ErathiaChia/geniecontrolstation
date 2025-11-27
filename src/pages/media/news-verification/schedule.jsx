@@ -43,7 +43,11 @@ import {
   CardContent,
   CardMedia,
   ButtonGroup,
-  Menu
+  Menu,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -80,7 +84,9 @@ import {
   RssFeed,
   Tv,
   ArrowDropDown,
-  Undo
+  Undo,
+  Notes,
+  Send
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -503,6 +509,9 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
   const [isEditingChannel, setIsEditingChannel] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const [notesModalOpen, setNotesModalOpen] = useState(false);
+  const [modalAction, setModalAction] = useState('publish'); // 'publish', 'reject', 'revert'
+  const [publisherNote, setPublisherNote] = useState('');
 
   const sections = [
     { id: 5, name: 'Publishing Schedule', icon: <ScheduleIcon />, confirmed: false },
@@ -525,10 +534,101 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
     navigate('/media/news-verification');
   };
 
+  // Generate AI-suggested publisher note
+  const generateAISuggestedNote = (action) => {
+    const currentDate = new Date().toLocaleDateString();
+    const selectedChannelsList = Object.entries(selectedChannels)
+      .filter(([_, selected]) => selected)
+      .map(([channel]) => channel.charAt(0).toUpperCase() + channel.slice(1))
+      .join(', ');
+    
+    if (action === 'publish') {
+      return `Publisher Review & Scheduling Notes - ${currentDate}
+
+PUBLICATION STRATEGY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Publication Timing: ${publishDateTime.toLocaleString()}
+Timing Rationale: ${aiPublisherAssistant.optimalTiming.recommendation.reason}
+Target Audience: ${aiPublisherAssistant.audienceInsights.demographics.map(d => d.segment).join(', ')}
+Expected Reach: ${aiPublisherAssistant.optimalTiming.recommendation.reach}
+
+CHANNEL DISTRIBUTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Selected Channels: ${selectedChannelsList || 'None selected'}
+Primary Channel Strategy: ${aiPublisherAssistant.channelRecommendation.primary.map(c => `${c.channel} (${c.priority})`).join(', ')}
+Secondary Channels: ${aiPublisherAssistant.channelRecommendation.secondary.map(c => c.channel).join(', ')}
+
+ENGAGEMENT STRATEGY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Hashtags: #${newsLead.storyDetails.category} #NewsUpdate #Singapore
+Social Copy: Engaging tone with clear call-to-action
+Visual Strategy: Feature image prominently displayed
+Community Engagement: Monitor comments and respond to inquiries
+
+PERFORMANCE EXPECTATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Expected Engagement: ${aiPublisherAssistant.optimalTiming.recommendation.engagement}
+Target Engagement Rate: 15%+
+Share Potential: Moderate to High
+
+MONITORING PLAN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Real-time Monitoring: First 2 hours post-publication
+Comment Moderation: Active monitoring enabled
+Performance Tracking: Hourly metrics review for first 24 hours
+
+Ready for publication. All editorial approvals obtained and scheduling confirmed.`;
+    } else if (action === 'reject') {
+      return `Publisher Rejection Notes - ${currentDate}
+
+REJECTION DECISION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Decision: REJECTED
+Reason: [Please specify the reason for rejection]
+
+ISSUES IDENTIFIED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Content Issue: [Describe any content concerns]
+• Timing Issue: [Describe any timing concerns]
+• Channel Suitability: [Describe any channel concerns]
+
+RECOMMENDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This news lead cannot proceed to publication at this time.
+Action Required: [Specify what needs to be done]
+
+Rejected by: Publisher Team
+Date: ${currentDate}`;
+    } else if (action === 'revert') {
+      return `Publisher Revert Notes - ${currentDate}
+
+REVERT DECISION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Decision: REVERTED TO APPROVAL STAGE
+Reason: [Please specify the reason for reverting]
+
+AREAS REQUIRING RE-REVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Editorial Review: [Specify what needs re-verification]
+• Content Updates: [Specify any content changes needed]
+• Additional Verification: [Specify additional checks required]
+
+RECOMMENDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This news lead requires additional editorial review before scheduling.
+The Senior Editorial team should address the above concerns.
+
+Reverted by: Publisher Team
+Date: ${currentDate}`;
+    }
+    return '';
+  };
+
   const handlePublish = () => {
-    console.log('Publishing news lead');
-    // Navigate to Published stage
-    navigate(`/media/news-verification/published/${newsId}`);
+    setModalAction('publish');
+    const aiSuggestion = generateAISuggestedNote('publish');
+    setPublisherNote(aiSuggestion);
+    setNotesModalOpen(true);
   };
 
   const handleChannelChange = (event) => {
@@ -548,14 +648,34 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
 
   const handleRejectNews = () => {
     handleMenuClose();
-    // TODO: Implement reject news logic
-    console.log('Reject News Leads clicked');
+    setModalAction('reject');
+    const aiSuggestion = generateAISuggestedNote('reject');
+    setPublisherNote(aiSuggestion);
+    setNotesModalOpen(true);
   };
 
   const handleRevertNews = () => {
     handleMenuClose();
-    // TODO: Implement revert news logic
-    console.log('Revert News Leads clicked');
+    setModalAction('revert');
+    const aiSuggestion = generateAISuggestedNote('revert');
+    setPublisherNote(aiSuggestion);
+    setNotesModalOpen(true);
+  };
+
+  const handleConfirmAction = () => {
+    console.log('Confirming action:', modalAction);
+    setNotesModalOpen(false);
+    
+    if (modalAction === 'publish') {
+      // Navigate to Published stage
+      navigate(`/media/news-verification/published/${newsId}`);
+    } else if (modalAction === 'reject') {
+      // Navigate back to news verification
+      navigate('/media/news-verification');
+    } else if (modalAction === 'revert') {
+      // Navigate back to approval stage
+      navigate(`/media/news-verification/approval/${newsId}`);
+    }
   };
 
   const getCheckStatusIcon = (status) => {
@@ -1462,6 +1582,102 @@ function NewsLeadDetailView({ newsLead, newsId, navigate }) {
           </Accordion>
         </Stack>
       </Drawer>
+
+      {/* Publisher Notes Modal */}
+      <Dialog 
+        open={notesModalOpen} 
+        onClose={() => setNotesModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Notes 
+              color={
+                modalAction === 'publish' ? 'success' : 
+                modalAction === 'reject' ? 'error' : 
+                'primary'
+              } 
+            />
+            <Typography variant="h5">
+              {modalAction === 'publish' ? 'Confirm Publication Schedule' :
+               modalAction === 'reject' ? 'Reject News Lead' :
+               'Revert to Approval Stage'}
+            </Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {modalAction === 'publish' ? 'Add publisher notes and confirm the publication schedule' :
+             modalAction === 'reject' ? 'Document the reason for rejection' :
+             'Specify the reason for reverting to approval stage'}
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Alert 
+              severity={
+                modalAction === 'publish' ? 'success' : 
+                modalAction === 'reject' ? 'error' : 
+                'info'
+              } 
+              icon={<AutoAwesome />}
+            >
+              The notes below have been pre-filled by AI based on your scheduling configuration. Please review and edit as needed.
+            </Alert>
+            <TextField
+              fullWidth
+              multiline
+              rows={16}
+              label="Publisher Notes"
+              value={publisherNote}
+              onChange={(e) => setPublisherNote(e.target.value)}
+              variant="outlined"
+              placeholder="Enter your publisher notes here..."
+              helperText="These notes will be included in the publication record and visible in the editorial trail."
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button 
+            onClick={() => setNotesModalOpen(false)}
+            color="inherit"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => {
+              const aiSuggestion = generateAISuggestedNote(modalAction);
+              setPublisherNote(aiSuggestion);
+            }}
+            startIcon={<AutoAwesome />}
+            sx={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #2196f3 100%)',
+              color: 'white',
+              border: 'none',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408b 50%, #1976d2 100%)',
+                border: 'none'
+              }
+            }}
+          >
+            Regenerate AI Notes
+          </Button>
+          <Button 
+            onClick={handleConfirmAction}
+            variant="contained"
+            color={
+              modalAction === 'publish' ? 'success' : 
+              modalAction === 'reject' ? 'error' : 
+              'primary'
+            }
+            endIcon={<Send />}
+            disabled={!publisherNote.trim()}
+          >
+            {modalAction === 'publish' ? 'Confirm & Publish' :
+             modalAction === 'reject' ? 'Confirm Rejection' :
+             'Confirm & Revert'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
