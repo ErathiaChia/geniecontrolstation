@@ -13,7 +13,7 @@ const fetchStations = async () => {
   // TODO: replace with actual API call
   // const response = await fetch('/api/stations');
   // return response.json();
-  
+
   return [
     { id: 1, name: 'Kiss 92', active: true, url: 'https://22283.live.streamtheworld.com/ONE_FM_913AAC.aac' },
     { id: 2, name: '98.3 FM', active: false, url: '' },
@@ -25,7 +25,7 @@ const fetchSegments = async (stationId) => {
   // TODO: replace with actual API call
   // const response = await fetch(`/api/stations/${stationId}/segments`);
   // return response.json();
-  
+
   return [];
 };
 
@@ -37,7 +37,7 @@ const createSegment = async ({ stationId, segment }) => {
   //   body: JSON.stringify(segment)
   // });
   // return response.json();
-  
+
   return { ...segment, id: Date.now() };
 };
 
@@ -49,7 +49,7 @@ const updateSegment = async ({ stationId, segmentId, segment }) => {
   //   body: JSON.stringify(segment)
   // });
   // return response.json();
-  
+
   return { ...segment, id: segmentId };
 };
 
@@ -58,7 +58,7 @@ const deleteSegment = async ({ stationId, segmentId }) => {
   // await fetch(`/api/stations/${stationId}/segments/${segmentId}`, {
   //   method: 'DELETE'
   // });
-  
+
   return { success: true };
 };
 
@@ -80,7 +80,7 @@ export function useSegments(stationId) {
 
 export function useCreateSegment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createSegment,
     onSuccess: (data, variables) => {
@@ -94,7 +94,7 @@ export function useCreateSegment() {
 
 export function useUpdateSegment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: updateSegment,
     onSuccess: (data, variables) => {
@@ -108,7 +108,7 @@ export function useUpdateSegment() {
 
 export function useDeleteSegment() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: deleteSegment,
     onSuccess: (data, variables) => {
@@ -119,4 +119,3 @@ export function useDeleteSegment() {
     }
   });
 }
-

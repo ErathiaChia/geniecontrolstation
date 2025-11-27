@@ -1,38 +1,42 @@
 // material-ui
 import { useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 // ==============================|| GENIE OPS LOGO SVG ||============================== //
 
 export default function LogoMain() {
   const theme = useTheme();
   return (
-    <svg width="auto" height="35" viewBox="0 0 450 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Genie Icon */}
-      <path 
-        fillRule="evenodd" 
-        clipRule="evenodd" 
-        d="M24.3489 12.4188H50.0001V20.4188H24.3489C23.5911 20.4188 22.9768 21.0331 22.9768 21.7909V34.9769C22.9768 35.7347 23.5911 36.349 24.3489 36.349H26.7635V44.349H24.3489C19.1728 44.349 14.9768 40.153 14.9768 34.9769V21.7909C14.9768 16.6148 19.1728 12.4188 24.3489 12.4188ZM31.966 49.8602V50.4111C31.966 55.5871 36.1621 59.7832 41.3381 59.7832H62.3877V51.7832H41.3381C40.5803 51.7832 39.966 51.1689 39.966 50.4111V49.8602H31.966ZM45.8763 44.349H48.0001H71.6512C76.8273 44.349 81.0233 40.153 81.0233 34.9769V21.7909C81.0233 16.6148 76.8273 12.4188 71.6512 12.4188H61.0001V20.4188H71.6512C72.409 20.4188 73.0233 21.0331 73.0233 21.7909V34.9769C73.0233 35.7347 72.409 36.349 71.6512 36.349H48.0001H45.8763V44.349Z" 
-        fill={theme.vars.palette.primary.main}
-      />
-      <circle cx="67.8864" cy="55.6134" r="3.66279" fill={theme.vars.palette.primary.main} />
-      <circle cx="55.5" cy="16.5" r="3.5" fill={theme.vars.palette.primary.main} />
-      <path 
-        d="M35.654 31.7428C37.0875 35.6168 40.1419 38.6712 44.0159 40.1047C40.1419 41.5382 37.0875 44.5926 35.654 48.4665C34.2205 44.5926 31.1661 41.5382 27.2921 40.1047C31.1661 38.6712 34.2205 35.6168 35.654 31.7428Z" 
-        fill={theme.vars.palette.primary.main}
-      />
-      
-      {/* Text: Genie Ops */}
-      <text 
-        x="100" 
-        y="40" 
-        fontFamily="Poppins, sans-serif" 
-        fontSize="45" 
-        fontWeight="800" 
-        fill={theme.vars.palette.text.primary}
-        letterSpacing="0.5"
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <svg width="35" height="35" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Genie Icon */}
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M24.3489 12.4188H50.0001V20.4188H24.3489C23.5911 20.4188 22.9768 21.0331 22.9768 21.7909V34.9769C22.9768 35.7347 23.5911 36.349 24.3489 36.349H26.7635V44.349H24.3489C19.1728 44.349 14.9768 40.153 14.9768 34.9769V21.7909C14.9768 16.6148 19.1728 12.4188 24.3489 12.4188ZM31.966 49.8602V50.4111C31.966 55.5871 36.1621 59.7832 41.3381 59.7832H62.3877V51.7832H41.3381C40.5803 51.7832 39.966 51.1689 39.966 50.4111V49.8602H31.966ZM45.8763 44.349H48.0001H71.6512C76.8273 44.349 81.0233 40.153 81.0233 34.9769V21.7909C81.0233 16.6148 76.8273 12.4188 71.6512 12.4188H61.0001V20.4188H71.6512C72.409 20.4188 73.0233 21.0331 73.0233 21.7909V34.9769C73.0233 35.7347 72.409 36.349 71.6512 36.349H48.0001H45.8763V44.349Z"
+          fill={theme.vars.palette.primary.main}
+        />
+        <circle cx="67.8864" cy="55.6134" r="3.66279" fill={theme.vars.palette.primary.main} />
+        <circle cx="55.5" cy="16.5" r="3.5" fill={theme.vars.palette.primary.main} />
+        <path
+          d="M35.654 31.7428C37.0875 35.6168 40.1419 38.6712 44.0159 40.1047C40.1419 41.5382 37.0875 44.5926 35.654 48.4665C34.2205 44.5926 31.1661 41.5382 27.2921 40.1047C31.1661 38.6712 34.2205 35.6168 35.654 31.7428Z"
+          fill={theme.vars.palette.primary.main}
+        />
+      </svg>
+      <Typography
+        sx={{
+          fontFamily: 'Poppins, sans-serif',
+          fontSize: '20px',
+          fontWeight: 800,
+          color: theme.vars.palette.text.primary,
+          letterSpacing: '0.5px',
+          lineHeight: 1.2,
+          whiteSpace: 'nowrap'
+        }}
       >
         Genie OPS
-      </text>
-    </svg>
+      </Typography>
+    </Box>
   );
 }

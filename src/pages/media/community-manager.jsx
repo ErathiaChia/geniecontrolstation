@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import * as lamejs from 'lamejs';
 
 // assets
 import kiss92Logo from '../../assets/images/users/kiss92.webp';
 import fm983Logo from '../../assets/images/users/963.webp';
 import fm913Logo from '../../assets/images/users/913.webp';
+import moneyFM893Logo from '../../assets/images/users/893.webp';
 
 // material-ui
 import Box from '@mui/material/Box';
@@ -33,6 +34,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import MenuItem from '@mui/material/MenuItem';
+import Popover from '@mui/material/Popover';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 import { DataGrid } from '@mui/x-data-grid';
 
 // icons
@@ -101,14 +105,22 @@ function audioBufferToMp3Blob(audioBuffer) {
 const stationLogos = {
   1: kiss92Logo, // Kiss 92
   2: fm983Logo, // 98.3 FM
-  3: fm913Logo // 91.3 FM
+  3: fm913Logo, // 91.3 FM
+  4: moneyFM893Logo // Money FM 89.3
 };
 
 export default function CommunityManager() {
   const [stations, setStations] = useState([
-    { id: 1, name: 'Kiss 92', active: true, url: 'https://22283.live.streamtheworld.com/ONE_FM_913AAC.aac' },
-    { id: 2, name: '98.3 FM', active: false, url: '' },
-    { id: 3, name: '91.3 FM', active: false, url: '' }
+    { id: 1, name: 'Kiss 92', active: true, url: 'https://22283.live.streamtheworld.com/ONE_FM_913AAC.aac', segmentDuration: 60 },
+    { id: 2, name: '98.3 FM', active: false, url: '', segmentDuration: 60 },
+    { id: 3, name: '91.3 FM', active: false, url: '', segmentDuration: 60 },
+    {
+      id: 4,
+      name: 'Money FM 89.3',
+      active: false,
+      url: 'https://28123.mc.tritondigital.com/OMNY_STNEWSPRESENTEDBYMONEYFM_NEWSFROMTHESTRAITSTIMES_P/media-session/2786998d-7493-4ca3-bd02-e63cf11b2f0d/d/clips/d9486183-3dd4-4ad6-aebe-a4c1008455d5/4e188010-01ce-44a9-bf38-adcf004a366a/f42be6fd-55b0-4998-bebe-b3a2000e0dfa/audio/direct/t1764204709/MONEYFM_-_8_31am_NEWS_HEADLINES.mp3?t=1764204709&in_playlist=a86dfcac-e7b5-4438-b84b-adcf004aff3b&utm_source=Podcast',
+      segmentDuration: 60
+    }
   ]);
 
   const [stationData, setStationData] = useState({
@@ -121,7 +133,9 @@ export default function CommunityManager() {
         srt: 'Smooth jazz all morning long. Up next, some classic hits...',
         segmentCategory: 'Music',
         agentResponse: 'Now playing: Smooth Jazz. Relax and enjoy the tunes. #SmoothJazz',
-        clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' // Sample audio clip
+        clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', // Sample audio clip
+        shared: false,
+        sharedPlatforms: []
       }
     ],
     3: [
@@ -132,9 +146,12 @@ export default function CommunityManager() {
         srt: 'Rock on! We have a special guest in the studio today...',
         segmentCategory: 'Interview',
         agentResponse: "Special guest in the studio today! You don't want to miss this rock legend.",
-        clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' // Sample audio clip
+        clipUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', // Sample audio clip
+        shared: false,
+        sharedPlatforms: []
       }
-    ]
+    ],
+    4: []
   });
 
   // Media Player States - now per station
@@ -143,6 +160,29 @@ export default function CommunityManager() {
   // Pagination States
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Selection States
+  const [selectedRows, setSelectedRows] = useState([]);
+
+  // Quick Share States
+  const [quickShareAnchor, setQuickShareAnchor] = useState(null);
+  const [selectedPlatforms, setSelectedPlatforms] = useState({
+    whatsapp: true,
+    telegram: true,
+    wechat: true,
+    facebook: true,
+    instagram: true
+  });
+  const [shareToastOpen, setShareToastOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+
+  const sharedPlatformMeta = {
+    whatsapp: { label: 'WhatsApp', Icon: WhatsApp },
+    telegram: { label: 'Telegram', Icon: Telegram },
+    wechat: { label: 'WeChat', Icon: null },
+    facebook: { label: 'Facebook', Icon: Facebook },
+    instagram: { label: 'Instagram', Icon: Instagram }
+  };
 
   // Edit Modal States
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -184,7 +224,8 @@ export default function CommunityManager() {
     logoPreview: null,
     stationName: '',
     apiConfig: '',
-    schedules: []
+    schedules: [],
+    segmentDuration: 60
   });
   const [dragActiveLogo, setDragActiveLogo] = useState(false);
   const logoInputRef = useRef(null);
@@ -196,16 +237,23 @@ export default function CommunityManager() {
     logoPreview: null,
     stationName: '',
     apiConfig: '',
-    schedules: []
+    schedules: [],
+    segmentDuration: 60
   });
   const [dragActiveEditLogo, setDragActiveEditLogo] = useState(false);
   const editLogoInputRef = useRef(null);
 
   // Refs - now stored per station
-  const audioRefsMap = useRef({});
+  const audioRefsMap = useRef({}); // for playback
+  const recordingAudioRefsMap = useRef({}); // separate audio elements for recording
   const recorderRefsMap = useRef({});
   const chunksRefsMap = useRef({});
   const clipAudioRef = useRef(null);
+  const recordingIntervalRef = useRef({});
+  const processingQueueRef = useRef({}); // queue for processing chunks
+  const currentRecordingRowRef = useRef({}); // track current recording row per station
+  const isRecordingRef = useRef({}); // track recording state per station (for callbacks)
+  const segmentDurationRef = useRef({}); // track segment duration per station (in seconds)
 
   // helper function to get or initialize station state
   const getStationState = (stationId) => {
@@ -231,6 +279,13 @@ export default function CommunityManager() {
       }
     }));
   };
+
+  // Sync segmentDuration ref with stations state
+  useEffect(() => {
+    stations.forEach((station) => {
+      segmentDurationRef.current[station.id] = station.segmentDuration ?? 60;
+    });
+  }, [stations]);
 
   // Clip Player States
   const [playingClipId, setPlayingClipId] = useState(null);
@@ -259,6 +314,118 @@ export default function CommunityManager() {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  const handleSelectRow = (rowId) => {
+    const targetRow = currentData.find((row) => row.id === rowId);
+    if (!targetRow) {
+      return;
+    }
+
+    if (targetRow.isRecording || targetRow.isLoading || targetRow.shared) {
+      return;
+    }
+
+    setSelectedRows((prev) => (prev.includes(rowId) ? prev.filter((id) => id !== rowId) : [...prev, rowId]));
+  };
+
+  const handleSelectAll = (event) => {
+    if (event.target.checked) {
+      const selectableRowIds = currentData.filter((row) => !row.isRecording && !row.isLoading && !row.shared).map((row) => row.id);
+      setSelectedRows(selectableRowIds);
+    } else {
+      setSelectedRows([]);
+    }
+  };
+
+  const selectableRows = currentData.filter((row) => !row.isRecording && !row.isLoading && !row.shared);
+  const isAllSelected = selectableRows.length > 0 && selectedRows.length === selectableRows.length;
+  const isSomeSelected = selectedRows.length > 0 && selectedRows.length < selectableRows.length;
+
+  const handleQuickShareClick = (event) => {
+    setQuickShareAnchor(event.currentTarget);
+  };
+
+  const handleQuickShareClose = () => {
+    setQuickShareAnchor(null);
+  };
+
+  const handlePlatformToggle = (platform) => {
+    setSelectedPlatforms((prev) => ({
+      ...prev,
+      [platform]: !prev[platform]
+    }));
+  };
+
+  const handleQuickShare = async () => {
+    if (selectedRows.length === 0) return;
+
+    const selectedPlatformsList = Object.entries(selectedPlatforms)
+      .filter(([_, selected]) => selected)
+      .map(([platform, _]) => platform);
+
+    if (selectedPlatformsList.length === 0) {
+      alert('Please select at least one platform');
+      return;
+    }
+
+    setIsSharing(true);
+
+    // Get posts from selected rows
+    const selectedData = allData.filter((row) => selectedRows.includes(row.id));
+    const agentResponses = selectedData.map((row) => row.agentResponse).filter(Boolean);
+
+    // Mock delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    const activeStationId = activeStation?.id;
+
+    if (activeStationId) {
+      setStationData((prev) => {
+        const stationSegments = prev[activeStationId] ?? [];
+
+        const updatedSegments = stationSegments.map((segment) => {
+          if (!selectedRows.includes(segment.id)) {
+            return segment;
+          }
+
+          const existingPlatforms = Array.isArray(segment.sharedPlatforms) ? segment.sharedPlatforms : [];
+          const mergedPlatforms = Array.from(new Set([...existingPlatforms, ...selectedPlatformsList]));
+
+          return {
+            ...segment,
+            shared: true,
+            sharedPlatforms: mergedPlatforms
+          };
+        });
+
+        const unsharedSegments = updatedSegments.filter((segment) => !segment.shared);
+        const sharedSegments = updatedSegments.filter((segment) => segment.shared);
+
+        return {
+          ...prev,
+          [activeStationId]: [...unsharedSegments, ...sharedSegments]
+        };
+      });
+    }
+
+    setSelectedRows([]);
+    setIsSharing(false);
+    setQuickShareAnchor(null);
+    setShareToastOpen(true);
+
+    // Reset platform selections to all checked
+    setSelectedPlatforms({
+      whatsapp: true,
+      telegram: true,
+      wechat: true,
+      facebook: true,
+      instagram: true
+    });
+  };
+
+  const handleToastClose = () => {
+    setShareToastOpen(false);
   };
 
   const handlePlay = () => {
@@ -301,91 +468,270 @@ export default function CommunityManager() {
     }
   };
 
-  const handleRecord = () => {
+  // helper function to crop audio to 10 seconds (for testing)
+  const cropAudioTo10Seconds = async (audioBuffer) => {
+    const sampleRate = audioBuffer.sampleRate;
+    const tenSecondsInSamples = sampleRate * 10; // 10 seconds for testing
+    const numChannels = audioBuffer.numberOfChannels;
+
+    // create a new audio buffer with 10 seconds duration
+    // @ts-ignore - webkitAudioContext is for older browsers
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioCtx();
+    const croppedBuffer = audioCtx.createBuffer(numChannels, Math.min(tenSecondsInSamples, audioBuffer.length), sampleRate);
+
+    // copy the first 10 seconds of audio data
+    for (let channel = 0; channel < numChannels; channel++) {
+      const sourceData = audioBuffer.getChannelData(channel);
+      const targetData = croppedBuffer.getChannelData(channel);
+      const length = Math.min(tenSecondsInSamples, sourceData.length);
+      for (let i = 0; i < length; i++) {
+        targetData[i] = sourceData[i];
+      }
+    }
+
+    return croppedBuffer;
+  };
+
+  // helper function to call the text_podcast API
+  const callTextPodcastAPI = async (audioBlob) => {
+    const formData = new FormData();
+
+    // determine file extension based on blob type
+    let filename = 'recording.webm';
+    if (audioBlob.type.includes('mp3')) {
+      filename = 'recording.mp3';
+    } else if (audioBlob.type.includes('wav')) {
+      filename = 'recording.wav';
+    } else if (audioBlob.type.includes('ogg')) {
+      filename = 'recording.ogg';
+    }
+
+    formData.append('audio', audioBlob, filename);
+
+    try {
+      const response = await fetch('https://dev-genie.001.gs/smart-api/text_podcast', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('API call failed:', error);
+      throw error;
+    }
+  };
+
+  // helper function to start a new recording chunk
+  const startRecordingChunk = (stationId, stream) => {
+    // Get segment duration from ref (always up-to-date) or default to 60 seconds
+    const segmentDurationSeconds = segmentDurationRef.current[stationId] ?? 60;
+    const segmentDuration = segmentDurationSeconds * 1000; // Convert to milliseconds
+
+    const recorder = new MediaRecorder(stream);
+    recorderRefsMap.current[stationId] = recorder;
+    chunksRefsMap.current[stationId] = [];
+
+    // create a new row immediately with recording state
+    const newRowId = Date.now();
+    const now = new Date();
+    const fromTime = now.toISOString().slice(0, 19).replace('T', ' ');
+    const toTime = new Date(now.getTime() + segmentDuration).toISOString().slice(0, 19).replace('T', ' ');
+
+    setStationData((prev) => ({
+      ...prev,
+      [stationId]: [
+        {
+          id: newRowId,
+          from: fromTime,
+          to: toTime,
+          srt: 'loading',
+          segmentCategory: 'loading',
+          agentResponse: 'loading',
+          clipUrl: null,
+          isRecording: true, // flag to show recording icon
+          isLoading: true
+        },
+        ...(prev[stationId] || [])
+      ]
+    }));
+
+    // store the row ID for this recording
+    currentRecordingRowRef.current[stationId] = newRowId;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunksRefsMap.current[stationId].push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const chunks = [...chunksRefsMap.current[stationId]];
+      const rowId = currentRecordingRowRef.current[stationId];
+      const stillRecording = isRecordingRef.current[stationId];
+
+      console.log('Recording stopped, chunk size:', chunks.length, 'rowId:', rowId, 'stillRecording:', stillRecording);
+
+      // update the row immediately to show recording finished (before API call)
+      // determine the mime type from the chunks
+      let mimeType = 'audio/webm';
+      if (chunks.length > 0 && chunks[0].type) {
+        mimeType = chunks[0].type;
+      }
+
+      const recordedBlob = new Blob(chunks, { type: mimeType });
+      const url = URL.createObjectURL(recordedBlob);
+
+      // update row: recording finished, clip available
+      setStationData((prev) => ({
+        ...prev,
+        [stationId]: prev[stationId].map((item) =>
+          item.id === rowId
+            ? {
+                ...item,
+                clipUrl: url,
+                isRecording: false
+              }
+            : item
+        )
+      }));
+
+      console.log('Starting API call in background for rowId:', rowId);
+
+      // call API in background (truly non-blocking)
+      setTimeout(() => {
+        callTextPodcastAPI(recordedBlob)
+          .then((apiResponse) => {
+            console.log('API response received for rowId:', rowId, apiResponse);
+            // update the row with actual data
+            setStationData((prev) => ({
+              ...prev,
+              [stationId]: prev[stationId].map((item) =>
+                item.id === rowId
+                  ? {
+                      ...item,
+                      srt: apiResponse.text || '',
+                      segmentCategory: apiResponse.category || '',
+                      agentResponse: apiResponse.content || '',
+                      isLoading: false
+                    }
+                  : item
+              )
+            }));
+          })
+          .catch((apiError) => {
+            console.error('API call failed for rowId:', rowId, apiError);
+            // update the row with error state
+            setStationData((prev) => ({
+              ...prev,
+              [stationId]: prev[stationId].map((item) =>
+                item.id === rowId
+                  ? {
+                      ...item,
+                      srt: 'Error loading content',
+                      segmentCategory: 'Error',
+                      agentResponse: 'Failed to process audio',
+                      isLoading: false
+                    }
+                  : item
+              )
+            }));
+          });
+      }, 0);
+
+      // if still recording, immediately start a new chunk (don't wait for processing)
+      if (stillRecording) {
+        console.log('Starting next recording chunk...');
+        startRecordingChunk(stationId, stream);
+      } else {
+        console.log('Recording stopped, not starting next chunk');
+      }
+    };
+
+    // record for configured segment duration then stop
+    recorder.start();
+    setTimeout(() => {
+      if (recorder.state === 'recording') {
+        recorder.stop();
+      }
+    }, segmentDuration);
+  };
+
+  const handleRecord = async () => {
     if (!activeStation) return;
 
     const state = getStationState(activeStation.id);
 
     if (state.isRecording) {
-      // stop recording
+      // stop recording - set ref first so onstop handler knows not to start new chunk
+      isRecordingRef.current[activeStation.id] = false;
+
       const recorder = recorderRefsMap.current[activeStation.id];
-      if (recorder) {
+      if (recorder && recorder.state === 'recording') {
         recorder.stop();
-        updateStationState(activeStation.id, {
-          isRecording: false,
-          status: 'Stopping...'
-        });
       }
+
+      // clear any pending intervals
+      if (recordingIntervalRef.current[activeStation.id]) {
+        clearInterval(recordingIntervalRef.current[activeStation.id]);
+        delete recordingIntervalRef.current[activeStation.id];
+      }
+
+      // stop and cleanup the recording audio element
+      const recordingAudio = recordingAudioRefsMap.current[activeStation.id];
+      if (recordingAudio) {
+        recordingAudio.pause();
+        recordingAudio.src = '';
+        delete recordingAudioRefsMap.current[activeStation.id];
+      }
+
+      updateStationState(activeStation.id, {
+        isRecording: false,
+        status: 'Stopped',
+        isProcessing: false
+      });
     } else {
       // start recording
       try {
-        // get or create audio element for this station
-        if (!audioRefsMap.current[activeStation.id]) {
-          const audio = new Audio(activeStation.url);
-          audio.crossOrigin = 'anonymous';
-          audio.onended = () => {
-            updateStationState(activeStation.id, { isPlaying: false });
-          };
-          audioRefsMap.current[activeStation.id] = audio;
-        }
+        // create a separate audio element for recording (not for playback)
+        const recordingAudio = new Audio(activeStation.url);
+        recordingAudio.crossOrigin = 'anonymous';
+        recordingAudio.volume = 0; // mute it so user doesn't hear it
+        recordingAudioRefsMap.current[activeStation.id] = recordingAudio;
 
-        const audioElement = audioRefsMap.current[activeStation.id];
+        // audio must be playing to capture stream
+        await recordingAudio.play();
 
         // need to capture stream
-        const stream = audioElement.captureStream ? audioElement.captureStream() : audioElement.mozCaptureStream();
+        const stream = recordingAudio.captureStream ? recordingAudio.captureStream() : recordingAudio.mozCaptureStream();
 
         if (!stream) {
           alert('Stream capture not supported in this browser.');
           return;
         }
 
-        const recorder = new MediaRecorder(stream);
-        recorderRefsMap.current[activeStation.id] = recorder;
-        chunksRefsMap.current[activeStation.id] = [];
+        // check if stream has tracks
+        const tracks = stream.getTracks();
+        if (tracks.length === 0) {
+          alert('No audio tracks available. Please make sure the audio is playing.');
+          return;
+        }
 
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            chunksRefsMap.current[activeStation.id].push(e.data);
-          }
-        };
+        // set ref to true so onstop handler knows to continue recording
+        isRecordingRef.current[activeStation.id] = true;
 
-        recorder.onstop = async () => {
-          const stationId = activeStation.id;
-          updateStationState(stationId, {
-            status: 'Converting to MP3...',
-            isProcessing: true
-          });
-
-          try {
-            const webmBlob = new Blob(chunksRefsMap.current[stationId], { type: 'audio/webm' });
-            const arrayBuffer = await webmBlob.arrayBuffer();
-
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            const audioCtx = new AudioCtx();
-            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
-            const mp3Blob = audioBufferToMp3Blob(audioBuffer);
-            const url = URL.createObjectURL(mp3Blob);
-
-            updateStationState(stationId, {
-              downloadUrl: url,
-              status: 'Recording complete',
-              isProcessing: false
-            });
-          } catch (error) {
-            console.error('Conversion failed:', error);
-            updateStationState(stationId, {
-              status: 'Conversion Failed',
-              isProcessing: false
-            });
-          }
-        };
-
-        recorder.start();
         updateStationState(activeStation.id, {
           isRecording: true,
           status: 'Recording...'
         });
+
+        // start the first recording chunk
+        startRecordingChunk(activeStation.id, stream);
       } catch (e) {
         console.error('Recording failed:', e);
         updateStationState(activeStation.id, {
@@ -405,6 +751,7 @@ export default function CommunityManager() {
     // just reset pagination on station change
     // don't reset recording/playing states - they continue in background
     setPage(0);
+    setSelectedRows([]);
   };
 
   const handleEditClick = (row) => {
@@ -625,7 +972,8 @@ export default function CommunityManager() {
       logoPreview: null,
       stationName: '',
       apiConfig: '',
-      schedules: []
+      schedules: [],
+      segmentDuration: 60
     });
   };
 
@@ -726,7 +1074,8 @@ export default function CommunityManager() {
       active: false,
       url: addStationFormData.apiConfig,
       logo: addStationFormData.logoPreview,
-      schedules: addStationFormData.schedules
+      schedules: addStationFormData.schedules,
+      segmentDuration: addStationFormData.segmentDuration ?? 60
     };
 
     setStations([...stations, newStation]);
@@ -753,7 +1102,8 @@ export default function CommunityManager() {
       logoPreview: activeStation.logo || stationLogos[activeStation.id] || null,
       stationName: activeStation.name || '',
       apiConfig: activeStation.url || '',
-      schedules: activeStation.schedules || []
+      schedules: activeStation.schedules || [],
+      segmentDuration: activeStation.segmentDuration ?? 60
     });
     setEditStationModalOpen(true);
   };
@@ -765,7 +1115,8 @@ export default function CommunityManager() {
       logoPreview: null,
       stationName: '',
       apiConfig: '',
-      schedules: []
+      schedules: [],
+      segmentDuration: 60
     });
   };
 
@@ -866,14 +1217,14 @@ export default function CommunityManager() {
               name: editStationFormData.stationName,
               url: editStationFormData.apiConfig,
               logo: editStationFormData.logoPreview,
-              schedules: editStationFormData.schedules
+              schedules: editStationFormData.schedules,
+              segmentDuration: editStationFormData.segmentDuration ?? 60
             }
           : station
       )
     );
 
     console.log('Station updated:', editStationFormData);
-    alert('FM Station updated successfully!');
     handleEditStationClose();
   };
 
@@ -1158,33 +1509,50 @@ export default function CommunityManager() {
       {/* 1. FM Radio Station Section */}
       <Box>
         <Stack direction="row" spacing={2} sx={{ overflowX: 'auto', pb: 1 }}>
-          {stations.map((station) => (
-            <Card
-              key={station.id}
-              onClick={() => handleStationChange(station.id)}
-              sx={{
-                minWidth: 160,
-                p: 2,
-                cursor: 'pointer',
-                border: station.active ? '2px solid' : '1px solid',
-                borderColor: station.active ? 'primary.main' : 'divider',
-                bgcolor: station.active ? 'primary.lighter' : 'background.paper',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  bgcolor: station.active ? 'primary.lighter' : 'action.hover',
-                  borderColor: station.active ? 'primary.main' : 'primary.main',
-                  boxShadow: (theme) => theme.vars?.customShadows?.z1 || theme.customShadows?.z1 || theme.shadows[2]
-                }
-              }}
-            >
-              <Typography variant="h6" color={station.active ? 'primary.main' : 'text.primary'}>
-                {station.name || 'Empty Slot'}
-              </Typography>
-            </Card>
-          ))}
+          {stations.map((station) => {
+            const stationLogo = station.logo || stationLogos[station.id] || kiss92Logo;
+
+            return (
+              <Card
+                key={station.id}
+                onClick={() => handleStationChange(station.id)}
+                sx={{
+                  minWidth: 160,
+                  p: 2,
+                  cursor: 'pointer',
+                  border: station.active ? '2px solid' : '1px solid',
+                  borderColor: station.active ? 'primary.main' : 'divider',
+                  bgcolor: station.active ? 'primary.lighter' : 'background.paper',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    bgcolor: station.active ? 'primary.lighter' : 'action.hover',
+                    borderColor: station.active ? 'primary.main' : 'primary.main',
+                    boxShadow: (theme) => theme.vars?.customShadows?.z1 || theme.customShadows?.z1 || theme.shadows[2]
+                  }
+                }}
+              >
+                <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center">
+                  <Box
+                    component="img"
+                    src={stationLogo}
+                    alt={station.name || 'Radio Station'}
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      objectFit: 'contain',
+                      flexShrink: 0
+                    }}
+                  />
+                  <Typography variant="h6" color={station.active ? 'primary.main' : 'text.primary'}>
+                    {station.name || 'Empty Slot'}
+                  </Typography>
+                </Stack>
+              </Card>
+            );
+          })}
 
           {/* Add Button */}
           <Card
@@ -1274,8 +1642,15 @@ export default function CommunityManager() {
                         variant="contained"
                         size="large"
                         color={currentState.isRecording ? 'error' : 'success'}
-                        startIcon={currentState.isProcessing ? <CircularProgress size={20} color="inherit" /> : <FiberManualRecord />}
-                        endIcon={!currentState.isProcessing && <Stop />}
+                        startIcon={
+                          currentState.isProcessing ? (
+                            <CircularProgress size={20} color="inherit" />
+                          ) : currentState.isRecording ? (
+                            <Stop />
+                          ) : (
+                            <FiberManualRecord />
+                          )
+                        }
                         onClick={handleRecord}
                         disabled={currentState.isProcessing}
                         sx={{ minWidth: 160, py: 1.5 }}
@@ -1321,6 +1696,11 @@ export default function CommunityManager() {
             <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ mb: 2 }}>
               <Typography variant="h4">{activeStation?.name} - Recorded Segments</Typography>
               <Stack direction="row" spacing={1}>
+                {selectedRows.length > 0 && (
+                  <Button variant="contained" color="primary" startIcon={<Share />} onClick={handleQuickShareClick}>
+                    Quick Share
+                  </Button>
+                )}
                 <Button variant="outlined" startIcon={<MoreHoriz />}>
                   Action
                 </Button>
@@ -1339,14 +1719,15 @@ export default function CommunityManager() {
                 <TableHead>
                   <TableRow>
                     <TableCell padding="checkbox">
-                      <Checkbox />
+                      <Checkbox indeterminate={isSomeSelected} checked={isAllSelected} onChange={handleSelectAll} />
                     </TableCell>
                     <TableCell>DateTime (From)</TableCell>
                     <TableCell>DateTime (To)</TableCell>
                     <TableCell align="center">Clip</TableCell>
-                    <TableCell>SRT Content</TableCell>
+                    <TableCell>Transcription</TableCell>
                     <TableCell>Segment Category</TableCell>
-                    <TableCell>Agent Response</TableCell>
+                    <TableCell>Post</TableCell>
+                    <TableCell>Shared</TableCell>
                     <TableCell align="center">Action</TableCell>
                   </TableRow>
                 </TableHead>
@@ -1354,46 +1735,144 @@ export default function CommunityManager() {
                   {currentData.map((row) => (
                     <TableRow key={row.id}>
                       <TableCell padding="checkbox">
-                        <Checkbox />
+                        <Checkbox checked={selectedRows.includes(row.id)} onChange={() => handleSelectRow(row.id)} />
                       </TableCell>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.from}</TableCell>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.to}</TableCell>
                       <TableCell align="center">
-                        <IconButton
-                          color={playingClipId === row.id ? 'error' : 'primary'}
-                          onClick={() => handlePlayClip(row)}
-                          disabled={!row.clipUrl}
-                          sx={{
-                            transition: 'all 0.2s ease-in-out',
-                            '&:hover': {
-                              transform: 'scale(1.1)'
-                            }
-                          }}
-                        >
-                          {playingClipId === row.id ? <Stop /> : <PlayArrow />}
-                        </IconButton>
+                        {row.isRecording ? (
+                          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                            <FiberManualRecord
+                              sx={{
+                                color: 'error.main',
+                                fontSize: 16,
+                                animation: 'pulse 1.5s ease-in-out infinite',
+                                '@keyframes pulse': {
+                                  '0%': { opacity: 1 },
+                                  '50%': { opacity: 0.4 },
+                                  '100%': { opacity: 1 }
+                                }
+                              }}
+                            />
+                            <Typography variant="caption" color="error">
+                              Recording...
+                            </Typography>
+                          </Stack>
+                        ) : (
+                          <IconButton
+                            color={playingClipId === row.id ? 'error' : 'primary'}
+                            onClick={() => handlePlayClip(row)}
+                            disabled={!row.clipUrl}
+                            sx={{
+                              transition: 'all 0.2s ease-in-out',
+                              '&:hover': {
+                                transform: 'scale(1.1)'
+                              }
+                            }}
+                          >
+                            {playingClipId === row.id ? <Stop /> : <PlayArrow />}
+                          </IconButton>
+                        )}
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 300 }}>
-                        <Typography variant="body2" noWrap>
-                          {row.srt}
-                        </Typography>
+                      <TableCell sx={{ minWidth: 200, maxWidth: 400 }}>
+                        {row.isLoading ? (
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Transcribing...
+                            </Typography>
+                          </Stack>
+                        ) : (
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                            {row.srt}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <Chip label={row.segmentCategory} size="small" variant="outlined" />
+                        {row.isLoading ? (
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Categorizing...
+                            </Typography>
+                          </Stack>
+                        ) : (
+                          <Chip label={row.segmentCategory} size="small" variant="outlined" />
+                        )}
                       </TableCell>
-                      <TableCell sx={{ maxWidth: 300 }}>
-                        <Typography variant="body2" noWrap>
-                          {row.agentResponse}
-                        </Typography>
+                      <TableCell sx={{ minWidth: 200, maxWidth: 400 }}>
+                        {row.isLoading ? (
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <CircularProgress size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                              Generating response...
+                            </Typography>
+                          </Stack>
+                        ) : (
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                            {row.agentResponse}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {row.shared ? (
+                          <Stack
+                            direction="row"
+                            flexWrap="wrap"
+                            sx={{
+                              rowGap: 0.5,
+                              columnGap: 0.5,
+                              alignItems: 'flex-start'
+                            }}
+                          >
+                            {(row.sharedPlatforms ?? []).map((platform) => {
+                              const meta = sharedPlatformMeta[platform] ?? {
+                                label: platform,
+                                Icon: null
+                              };
+                              const IconComponent = meta.Icon;
+
+                              return (
+                                <Chip
+                                  key={platform}
+                                  label={meta.label}
+                                  size="small"
+                                  color="success"
+                                  variant="outlined"
+                                  icon={IconComponent ? <IconComponent sx={{ fontSize: 16 }} /> : undefined}
+                                  sx={{
+                                    height: 24
+                                  }}
+                                />
+                              );
+                            })}
+                          </Stack>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            Not shared
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell align="center">
                         <Stack direction="row" spacing={1} justifyContent="center">
                           <Button
                             size="small"
                             variant="contained"
+                            color="primary"
+                            startIcon={<Share />}
+                            onClick={() => handleShareClick(row)}
+                            disabled={row.isLoading}
+                            sx={{ minWidth: 'auto', px: 1 }}
+                          >
+                            Share
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
                             color="warning"
                             startIcon={<Edit />}
                             onClick={() => handleEditClick(row)}
+                            disabled={row.isLoading}
                             sx={{ minWidth: 'auto', px: 1, whiteSpace: 'nowrap' }}
                           >
                             Edit
@@ -1403,6 +1882,7 @@ export default function CommunityManager() {
                             variant="contained"
                             startIcon={<AutoFixHigh />}
                             onClick={() => handleRegenerateClick(row)}
+                            disabled={row.isLoading}
                             sx={{
                               minWidth: 'auto',
                               px: 1,
@@ -1415,18 +1895,15 @@ export default function CommunityManager() {
                           >
                             Regenerate
                           </Button>
-                          <Button size="small" variant="contained" color="error" startIcon={<Delete />} sx={{ minWidth: 'auto', px: 1 }}>
-                            Delete
-                          </Button>
                           <Button
                             size="small"
                             variant="contained"
-                            color="primary"
-                            startIcon={<Share />}
-                            onClick={() => handleShareClick(row)}
+                            color="error"
+                            startIcon={<Delete />}
+                            disabled={row.isLoading}
                             sx={{ minWidth: 'auto', px: 1 }}
                           >
-                            Share
+                            Delete
                           </Button>
                         </Stack>
                       </TableCell>
@@ -1494,20 +1971,20 @@ export default function CommunityManager() {
               ))}
             </TextField>
 
-            {/* SRT Content */}
+            {/* Transcription */}
             <TextField
-              label="SRT Content"
+              label="Transcription"
               value={editFormData.srt}
               onChange={(e) => handleFormChange('srt', e.target.value)}
               multiline
               rows={4}
               fullWidth
-              placeholder="Enter the transcript or SRT content..."
+              placeholder="Enter the transcript or transcription content..."
             />
 
-            {/* Agent Response */}
+            {/* Post */}
             <TextField
-              label="Agent Response"
+              label="Post"
               value={editFormData.agentResponse}
               onChange={(e) => handleFormChange('agentResponse', e.target.value)}
               multiline
@@ -1611,10 +2088,10 @@ export default function CommunityManager() {
               </TextField>
             </Box>
 
-            {/* Section 3: AI Agent Response */}
+            {/* Section 3: Post */}
             <Box>
               <Typography variant="h6" gutterBottom>
-                AI Agent Response
+                Post
               </Typography>
               <TextField
                 value={shareFormData.agentResponse}
@@ -1724,10 +2201,10 @@ export default function CommunityManager() {
         </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={3} sx={{ mt: 1 }}>
-            {/* Section 1: SRT Content */}
+            {/* Section 1: Transcription */}
             <Box>
               <Typography variant="h6" gutterBottom>
-                SRT Content
+                Transcription
               </Typography>
               <TextField
                 value={regenerateFormData.srt}
@@ -1735,7 +2212,7 @@ export default function CommunityManager() {
                 multiline
                 rows={4}
                 fullWidth
-                placeholder="Enter the transcript or SRT content..."
+                placeholder="Enter the transcript or transcription content..."
               />
             </Box>
 
@@ -1758,10 +2235,10 @@ export default function CommunityManager() {
               </TextField>
             </Box>
 
-            {/* Section 3: Agent Response */}
+            {/* Section 3: Post */}
             <Box>
               <Typography variant="h6" gutterBottom>
-                Agent Response
+                Post
               </Typography>
               <TextField
                 value={regenerateFormData.agentResponse}
@@ -1919,6 +2396,32 @@ export default function CommunityManager() {
               />
             </Box>
 
+            {/* Section 2.5: Segment Duration */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Segment Recording Duration
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Set how long each recording segment should be (in seconds)
+              </Typography>
+              <TextField
+                key={`add-duration-${addStationModalOpen}`}
+                type="number"
+                label="Duration (seconds)"
+                defaultValue={addStationFormData.segmentDuration ?? 60}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleAddStationFormChange('segmentDuration', val === '' ? '' : Number.parseInt(val, 10));
+                }}
+                fullWidth
+                inputProps={{
+                  min: 1,
+                  step: 1
+                }}
+                helperText="Default: 60 seconds (1 minute)"
+              />
+            </Box>
+
             {/* Section 3: Programme Time Slot */}
             <Box>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -2071,6 +2574,32 @@ export default function CommunityManager() {
               />
             </Box>
 
+            {/* Section 2.5: Segment Duration */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Segment Recording Duration
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Set how long each recording segment should be (in seconds)
+              </Typography>
+              <TextField
+                key={`edit-duration-${editStationModalOpen}-${activeStation?.id}`}
+                type="number"
+                label="Duration (seconds)"
+                defaultValue={editStationFormData.segmentDuration ?? 60}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleEditStationFormChange('segmentDuration', val === '' ? '' : Number.parseInt(val, 10));
+                }}
+                fullWidth
+                inputProps={{
+                  min: 1,
+                  step: 1
+                }}
+                helperText="Default: 60 seconds (1 minute)"
+              />
+            </Box>
+
             {/* Section 3: Programme Time Slot */}
             <Box>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
@@ -2124,6 +2653,182 @@ export default function CommunityManager() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Quick Share Popover */}
+      <Popover
+        open={Boolean(quickShareAnchor)}
+        anchorEl={quickShareAnchor}
+        onClose={handleQuickShareClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left'
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left'
+        }}
+      >
+        <Box sx={{ p: 3, minWidth: 320 }}>
+          <Typography variant="h6" gutterBottom>
+            Share to Platforms
+          </Typography>
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            {/* WhatsApp */}
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Checkbox checked={selectedPlatforms.whatsapp} onChange={() => handlePlatformToggle('whatsapp')} size="small" />
+              <Button
+                variant="contained"
+                startIcon={<WhatsApp />}
+                disabled
+                sx={{
+                  bgcolor: '#25D366',
+                  color: 'white',
+                  flex: 1,
+                  '&:hover': {
+                    bgcolor: '#20BA5A'
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: '#25D366',
+                    color: 'white',
+                    opacity: 0.7
+                  }
+                }}
+              >
+                WhatsApp
+              </Button>
+            </Stack>
+
+            {/* Telegram */}
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Checkbox checked={selectedPlatforms.telegram} onChange={() => handlePlatformToggle('telegram')} size="small" />
+              <Button
+                variant="contained"
+                startIcon={<Telegram />}
+                disabled
+                sx={{
+                  bgcolor: '#0088cc',
+                  color: 'white',
+                  flex: 1,
+                  '&:hover': {
+                    bgcolor: '#006699'
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: '#0088cc',
+                    color: 'white',
+                    opacity: 0.7
+                  }
+                }}
+              >
+                Telegram
+              </Button>
+            </Stack>
+
+            {/* WeChat */}
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Checkbox checked={selectedPlatforms.wechat} onChange={() => handlePlatformToggle('wechat')} size="small" />
+              <Button
+                variant="contained"
+                startIcon={
+                  <Box component="span" sx={{ fontSize: '1.5rem' }}>
+                    💬
+                  </Box>
+                }
+                disabled
+                sx={{
+                  bgcolor: '#09B83E',
+                  color: 'white',
+                  flex: 1,
+                  '&:hover': {
+                    bgcolor: '#078C31'
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: '#09B83E',
+                    color: 'white',
+                    opacity: 0.7
+                  }
+                }}
+              >
+                WeChat
+              </Button>
+            </Stack>
+
+            {/* Facebook */}
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Checkbox checked={selectedPlatforms.facebook} onChange={() => handlePlatformToggle('facebook')} size="small" />
+              <Button
+                variant="contained"
+                startIcon={<Facebook />}
+                disabled
+                sx={{
+                  bgcolor: '#1877F2',
+                  color: 'white',
+                  flex: 1,
+                  '&:hover': {
+                    bgcolor: '#145DBF'
+                  },
+                  '&.Mui-disabled': {
+                    bgcolor: '#1877F2',
+                    color: 'white',
+                    opacity: 0.7
+                  }
+                }}
+              >
+                Facebook
+              </Button>
+            </Stack>
+
+            {/* Instagram */}
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Checkbox checked={selectedPlatforms.instagram} onChange={() => handlePlatformToggle('instagram')} size="small" />
+              <Button
+                variant="contained"
+                startIcon={<Instagram />}
+                disabled
+                sx={{
+                  background: 'linear-gradient(45deg, #F58529, #DD2A7B, #8134AF, #515BD4)',
+                  color: 'white',
+                  flex: 1,
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #E07020, #C91F6C, #6F2B9A, #4449BE)'
+                  },
+                  '&.Mui-disabled': {
+                    background: 'linear-gradient(45deg, #F58529, #DD2A7B, #8134AF, #515BD4)',
+                    color: 'white',
+                    opacity: 0.7
+                  }
+                }}
+              >
+                Instagram
+              </Button>
+            </Stack>
+
+            <Divider sx={{ my: 1 }} />
+
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              startIcon={isSharing ? <CircularProgress size={16} color="inherit" /> : <Share />}
+              onClick={handleQuickShare}
+              disabled={isSharing}
+            >
+              {isSharing ? 'Sharing...' : 'Share'}
+            </Button>
+          </Stack>
+        </Box>
+      </Popover>
+
+      {/* Success Toast */}
+      <Snackbar
+        open={shareToastOpen}
+        autoHideDuration={3000}
+        onClose={handleToastClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={handleToastClose} severity="success" sx={{ width: '100%' }}>
+          Successfully shared to selected platforms!
+        </Alert>
+      </Snackbar>
     </Stack>
   );
 }
