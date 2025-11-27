@@ -527,13 +527,153 @@ export default function CommunityManager() {
     }
   };
 
+  // helper function to check if stream has active tracks
+  const hasActiveTracks = (stream) => {
+    if (!stream) return false;
+    const tracks = stream.getTracks();
+    return tracks.some((track) => track.readyState === 'live');
+  };
+
+  // helper function to stop recording gracefully when stream ends
+  const stopRecordingGracefully = (stationId) => {
+    console.log('Stopping recording gracefully due to stream end for station:', stationId);
+
+    // set recording flag to false
+    isRecordingRef.current[stationId] = false;
+
+    // stop current recorder if it exists
+    const recorder = recorderRefsMap.current[stationId];
+    if (recorder?.state === 'recording') {
+      try {
+        recorder.stop();
+      } catch (e) {
+        console.error('Error stopping recorder:', e);
+      }
+    }
+
+    // process any remaining chunks
+    const chunks = chunksRefsMap.current[stationId] ?? [];
+    const rowId = currentRecordingRowRef.current[stationId];
+
+    if (chunks.length > 0 && rowId) {
+      console.log('Processing remaining chunks for rowId:', rowId);
+
+      let mimeType = 'audio/webm';
+      if (chunks[0]?.type) {
+        mimeType = chunks[0].type;
+      }
+
+      const recordedBlob = new Blob(chunks, { type: mimeType });
+      const url = URL.createObjectURL(recordedBlob);
+
+      // update row: recording finished, clip available
+      setStationData((prev) => ({
+        ...prev,
+        [stationId]: prev[stationId].map((item) =>
+          item.id === rowId
+            ? {
+                ...item,
+                clipUrl: url,
+                isRecording: false
+              }
+            : item
+        )
+      }));
+
+      // call API in background
+      setTimeout(() => {
+        callTextPodcastAPI(recordedBlob)
+          .then((apiResponse) => {
+            console.log('API response received for rowId:', rowId, apiResponse);
+            setStationData((prev) => ({
+              ...prev,
+              [stationId]: prev[stationId].map((item) =>
+                item.id === rowId
+                  ? {
+                      ...item,
+                      srt: apiResponse.text || '',
+                      segmentCategory: apiResponse.category || '',
+                      agentResponse: apiResponse.content || '',
+                      isLoading: false
+                    }
+                  : item
+              )
+            }));
+          })
+          .catch((apiError) => {
+            console.error('API call failed for rowId:', rowId, apiError);
+            setStationData((prev) => ({
+              ...prev,
+              [stationId]: prev[stationId].map((item) =>
+                item.id === rowId
+                  ? {
+                      ...item,
+                      srt: 'Error loading content',
+                      segmentCategory: 'Error',
+                      agentResponse: 'Failed to process audio',
+                      isLoading: false
+                    }
+                  : item
+              )
+            }));
+          });
+      }, 0);
+    } else if (rowId) {
+      // no chunks but row exists, mark as error
+      setStationData((prev) => ({
+        ...prev,
+        [stationId]: prev[stationId].map((item) =>
+          item.id === rowId
+            ? {
+                ...item,
+                isRecording: false,
+                srt: 'Stream ended - no audio captured',
+                segmentCategory: 'Error',
+                agentResponse: 'Recording stopped due to stream end',
+                isLoading: false
+              }
+            : item
+        )
+      }));
+    }
+
+    // cleanup
+    const recordingAudio = recordingAudioRefsMap.current[stationId];
+    if (recordingAudio) {
+      recordingAudio.pause();
+      recordingAudio.src = '';
+      delete recordingAudioRefsMap.current[stationId];
+    }
+
+    updateStationState(stationId, {
+      isRecording: false,
+      status: 'Stream Ended',
+      isProcessing: false
+    });
+  };
+
   // helper function to start a new recording chunk
   const startRecordingChunk = (stationId, stream) => {
+    // check if stream has active tracks before starting
+    if (!hasActiveTracks(stream)) {
+      console.warn('Stream has no active tracks, stopping recording for station:', stationId);
+      stopRecordingGracefully(stationId);
+      return;
+    }
+
     // Get segment duration from ref (always up-to-date) or default to 60 seconds
     const segmentDurationSeconds = segmentDurationRef.current[stationId] ?? 60;
     const segmentDuration = segmentDurationSeconds * 1000; // Convert to milliseconds
 
-    const recorder = new MediaRecorder(stream);
+    let recorder;
+    try {
+      recorder = new MediaRecorder(stream);
+    } catch (e) {
+      console.error('Failed to create MediaRecorder:', e);
+      stopRecordingGracefully(stationId);
+      return;
+    }
+
     recorderRefsMap.current[stationId] = recorder;
     chunksRefsMap.current[stationId] = [];
 
@@ -554,7 +694,7 @@ export default function CommunityManager() {
           segmentCategory: 'loading',
           agentResponse: 'loading',
           clipUrl: null,
-          isRecording: true, // flag to show recording icon
+          isRecording: true,
           isLoading: true
         },
         ...(prev[stationId] || [])
@@ -564,9 +704,27 @@ export default function CommunityManager() {
     // store the row ID for this recording
     currentRecordingRowRef.current[stationId] = newRowId;
 
+    // monitor stream tracks for end events
+    const tracks = stream.getTracks();
+    tracks.forEach((track) => {
+      track.onended = () => {
+        console.log('Track ended for station:', stationId);
+        if (isRecordingRef.current[stationId]) {
+          stopRecordingGracefully(stationId);
+        }
+      };
+    });
+
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) {
         chunksRefsMap.current[stationId].push(e.data);
+      }
+    };
+
+    recorder.onerror = (e) => {
+      console.error('MediaRecorder error:', e);
+      if (isRecordingRef.current[stationId]) {
+        stopRecordingGracefully(stationId);
       }
     };
 
@@ -577,10 +735,39 @@ export default function CommunityManager() {
 
       console.log('Recording stopped, chunk size:', chunks.length, 'rowId:', rowId, 'stillRecording:', stillRecording);
 
-      // update the row immediately to show recording finished (before API call)
+      // check if we have any chunks to process
+      if (chunks.length === 0) {
+        console.warn('No chunks recorded for rowId:', rowId);
+        setStationData((prev) => ({
+          ...prev,
+          [stationId]: prev[stationId].map((item) =>
+            item.id === rowId
+              ? {
+                  ...item,
+                  isRecording: false,
+                  srt: 'No audio captured',
+                  segmentCategory: 'Error',
+                  agentResponse: 'Recording produced no audio data',
+                  isLoading: false
+                }
+              : item
+          )
+        }));
+
+        // if still recording, try to start next chunk
+        if (stillRecording && hasActiveTracks(stream)) {
+          console.log('Starting next recording chunk after empty chunk...');
+          startRecordingChunk(stationId, stream);
+        } else if (stillRecording) {
+          console.warn('Stream has no active tracks, stopping recording');
+          stopRecordingGracefully(stationId);
+        }
+        return;
+      }
+
       // determine the mime type from the chunks
       let mimeType = 'audio/webm';
-      if (chunks.length > 0 && chunks[0].type) {
+      if (chunks[0]?.type) {
         mimeType = chunks[0].type;
       }
 
@@ -644,20 +831,37 @@ export default function CommunityManager() {
           });
       }, 0);
 
-      // if still recording, immediately start a new chunk (don't wait for processing)
+      // if still recording, check stream before starting next chunk
       if (stillRecording) {
-        console.log('Starting next recording chunk...');
-        startRecordingChunk(stationId, stream);
+        if (hasActiveTracks(stream)) {
+          console.log('Starting next recording chunk...');
+          startRecordingChunk(stationId, stream);
+        } else {
+          console.warn('Stream has no active tracks, stopping recording');
+          stopRecordingGracefully(stationId);
+        }
       } else {
         console.log('Recording stopped, not starting next chunk');
       }
     };
 
     // record for configured segment duration then stop
-    recorder.start();
+    try {
+      recorder.start();
+    } catch (e) {
+      console.error('Failed to start MediaRecorder:', e);
+      // if start fails, stop recording gracefully
+      stopRecordingGracefully(stationId);
+      return;
+    }
+
     setTimeout(() => {
       if (recorder.state === 'recording') {
-        recorder.stop();
+        try {
+          recorder.stop();
+        } catch (e) {
+          console.error('Error stopping recorder:', e);
+        }
       }
     }, segmentDuration);
   };
@@ -704,6 +908,14 @@ export default function CommunityManager() {
         recordingAudio.volume = 0; // mute it so user doesn't hear it
         recordingAudioRefsMap.current[activeStation.id] = recordingAudio;
 
+        // handle audio errors
+        recordingAudio.onerror = (e) => {
+          console.error('Audio element error:', e);
+          if (isRecordingRef.current[activeStation.id]) {
+            stopRecordingGracefully(activeStation.id);
+          }
+        };
+
         // audio must be playing to capture stream
         await recordingAudio.play();
 
@@ -721,6 +933,26 @@ export default function CommunityManager() {
           alert('No audio tracks available. Please make sure the audio is playing.');
           return;
         }
+
+        // monitor stream for end events
+        const handleTrackEnd = () => {
+          console.log('Stream track ended during recording');
+          if (isRecordingRef.current[activeStation.id]) {
+            stopRecordingGracefully(activeStation.id);
+          }
+        };
+
+        tracks.forEach((track) => {
+          track.onended = handleTrackEnd;
+        });
+
+        // also monitor audio element for ended event
+        recordingAudio.onended = () => {
+          console.log('Audio element ended during recording');
+          if (isRecordingRef.current[activeStation.id]) {
+            stopRecordingGracefully(activeStation.id);
+          }
+        };
 
         // set ref to true so onstop handler knows to continue recording
         isRecordingRef.current[activeStation.id] = true;
