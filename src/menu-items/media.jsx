@@ -23,7 +23,7 @@ const media = {
     },
     {
       id: 'community-manager',
-      title: 'Community Manager',
+      title: 'Radio - Community Manager',
       type: 'item',
       url: '/media/community-manager',
       icon: icons.People

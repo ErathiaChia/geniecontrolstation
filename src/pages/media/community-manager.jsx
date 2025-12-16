@@ -1947,7 +1947,7 @@ export default function CommunityManager() {
 
             {/* Table */}
             <TableContainer component={Paper} variant="outlined">
-              <Table sx={{ minWidth: 650 }} aria-label="community manager table">
+              <Table sx={{ minWidth: 650 }} aria-label="Radio - Community manager table">
                 <TableHead>
                   <TableRow>
                     <TableCell padding="checkbox">

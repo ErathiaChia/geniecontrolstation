@@ -18,46 +18,35 @@ const PublishedNewsLeads = Loadable(lazy(() => import('pages/media/news-verifica
 // ==============================|| FULL SCREEN ROUTING ||============================== //
 
 const FullScreenRoutes = {
-  path: '/',
   element: <FullScreenLayout />,
   children: [
     {
-      path: 'process',
-      children: [
-        {
-          path: 'document-assessment/:candidateId',
-          element: <DocumentAssessment />
-        },
-        {
-          path: 'candidate-screening/:candidateId',
-          element: <CandidateScreening />
-        },
-        {
-          path: 'approval/:candidateId',
-          element: <Approval />
-        }
-      ]
+      path: 'process/document-assessment/:candidateId',
+      element: <DocumentAssessment />
     },
     {
-      path: 'media',
-      children: [
-        {
-          path: 'news-verification/unverified/:newsId',
-          element: <UnverifiedNewsLeads />
-        },
-        {
-          path: 'news-verification/approval/:newsId',
-          element: <ApprovalNewsLeads />
-        },
-        {
-          path: 'news-verification/schedule/:newsId',
-          element: <ScheduleNewsLeads />
-        },
-        {
-          path: 'news-verification/published/:newsId',
-          element: <PublishedNewsLeads />
-        }
-      ]
+      path: 'process/candidate-screening/:candidateId',
+      element: <CandidateScreening />
+    },
+    {
+      path: 'process/approval/:candidateId',
+      element: <Approval />
+    },
+    {
+      path: 'media/news-verification/unverified/:newsId',
+      element: <UnverifiedNewsLeads />
+    },
+    {
+      path: 'media/news-verification/approval/:newsId',
+      element: <ApprovalNewsLeads />
+    },
+    {
+      path: 'media/news-verification/schedule/:newsId',
+      element: <ScheduleNewsLeads />
+    },
+    {
+      path: 'media/news-verification/published/:newsId',
+      element: <PublishedNewsLeads />
     }
   ]
 };
